@@ -6,13 +6,10 @@ import type { Idioma } from '../../diario/src/idioma.js';
 import type DiarioPlugin from './main.js';
 
 // Idioma de la app de Obsidian ('en' para todo lo que no sea español).
-// getLanguage() llegó en Obsidian 1.8: en versiones previas el binding
-// llega undefined y se lee el localStorage que la app usa desde siempre
-// (clave ausente = inglés).
+// getLanguage() existe desde Obsidian 1.8.7; minAppVersion lo garantiza.
 export function idiomaDeObsidian(): Idioma {
   try {
-    const lang = typeof getLanguage === 'function' ? getLanguage() : (window.localStorage.getItem('language') ?? 'en');
-    return lang.toLowerCase().startsWith('es') ? 'es' : 'en';
+    return getLanguage().toLowerCase().startsWith('es') ? 'es' : 'en';
   } catch {
     return 'en';
   }
@@ -186,7 +183,6 @@ export class PestanaAjustes extends PluginSettingTab {
         s
           .setLimits(1, 8, 1)
           .setValue(a.preguntasMax)
-          .setDynamicTooltip()
           .onChange(async valor => {
             a.preguntasMax = valor;
             await this.plugin.guardarAjustes();

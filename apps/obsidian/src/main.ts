@@ -49,7 +49,7 @@ export default class DiarioPlugin extends Plugin {
     this.addSettingTab(new PestanaAjustes(this.app, this));
 
     // el índice de memoria se refresca cuando Obsidian terminó de cargar
-    this.app.workspace.onLayoutReady(() => void this.refrescarRag('arranque'));
+    this.app.workspace.onLayoutReady(() => void this.refrescarRag());
   }
 
   onunload(): void {
@@ -114,16 +114,14 @@ export default class DiarioPlugin extends Plugin {
 
   // ── memoria de largo plazo ────────────────────────────────────
 
-  async refrescarRag(motivo: string): Promise<void> {
+  async refrescarRag(): Promise<void> {
     if (!this.ajustes.modeloEmbed) return;
     try {
       this.rag ??= new Rag(this.configActual().vault, this.configActual());
-      const r = await this.rag.reindexar();
-      if (this.rag.activo && r.embebidas) {
-        console.log(`[nightly-journal] rag ${motivo}: ${r.embebidas} nota(s) embebida(s) · ${r.total} en el índice`);
-      }
-    } catch (e) {
-      console.log(`[nightly-journal] rag desactivado: ${e instanceof Error ? e.message : String(e)}`);
+      await this.rag.reindexar();
+    } catch {
+      // sin vault de escritorio o config rota: la pestaña de consulta ya
+      // muestra "sin memoria" y la vista comunica el problema de arranque
     }
   }
 
@@ -133,13 +131,13 @@ export default class DiarioPlugin extends Plugin {
     const { workspace } = this.app;
     const hojas = workspace.getLeavesOfType(TIPO_VISTA_DIARIO);
     if (hojas.length) {
-      workspace.revealLeaf(hojas[0]);
+      await workspace.revealLeaf(hojas[0]);
       if (reiniciar && hojas[0].view instanceof VistaDiario) await hojas[0].view.iniciarSesion();
       return;
     }
     const hoja = workspace.getLeaf(true);
     await hoja.setViewState({ type: TIPO_VISTA_DIARIO, active: true });
-    workspace.revealLeaf(hoja);
+    await workspace.revealLeaf(hoja);
     if (this.rutaVault() === null)
       new Notice(
         this.idioma() === 'en' ? 'Nightly Journal only works on desktop.' : 'Nightly Journal solo funciona en escritorio.'

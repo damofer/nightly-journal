@@ -175,6 +175,7 @@ export class Rag {
   private indice: IndiceRag;
   private embed: FnEmbed;
   activo = true; // se apaga solo si el modelo de embeddings no está
+  ultimoError: string | null = null; // por qué se apagó (el caller decide si lo muestra)
 
   constructor(
     private vault: string,
@@ -220,9 +221,7 @@ export class Rag {
       writeFileSync(rutaIndiceRag(this.vault), JSON.stringify(this.indice), 'utf8');
     } catch (e) {
       this.activo = false;
-      const mensaje = e instanceof Error ? e.message : String(e);
-      console.log(`  [rag] memoria larga desactivada (${mensaje.slice(0, 120)})`);
-      console.log(`  [rag] para activarla: ollama pull ${this.cfg.modeloEmbed}`);
+      this.ultimoError = e instanceof Error ? e.message : String(e);
     }
     return { embebidas, total: vivas.size };
   }

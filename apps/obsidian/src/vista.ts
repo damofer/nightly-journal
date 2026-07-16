@@ -201,7 +201,7 @@ export class VistaDiario extends ItemView {
     );
     this.registerDomEvent(this.btnVoz, 'click', () => {
       const opciones: ('kokoro' | 'off')[] = this.saludVoz.kokoro ? ['kokoro', 'off'] : ['off'];
-      const i = opciones.indexOf((this.motor ?? 'off') as 'kokoro' | 'off');
+      const i = opciones.indexOf(this.motor ?? 'off');
       this.motor = opciones[(i + 1) % opciones.length];
       this.pintarBotonVoz();
     });
@@ -212,8 +212,8 @@ export class VistaDiario extends ItemView {
       }
     });
     this.registerDomEvent(this.entradaEl, 'input', () => {
-      this.entradaEl.style.height = 'auto';
-      this.entradaEl.style.height = `${Math.min(this.entradaEl.scrollHeight, 130)}px`;
+      this.entradaEl.setCssStyles({ height: 'auto' });
+      this.entradaEl.setCssStyles({ height: `${Math.min(this.entradaEl.scrollHeight, 130)}px` });
     });
 
     // tick de manos libres (el gate interno decide si escucha)
@@ -553,7 +553,7 @@ export class VistaDiario extends ItemView {
         let textoExtraido: string | undefined;
         const nombre = archivo.name.toLowerCase();
         if (nombre.endsWith('.pdf')) {
-          textoExtraido = await this.plugin.voz().extraerPdf(datos.buffer.slice(datos.byteOffset, datos.byteOffset + datos.byteLength) as ArrayBuffer);
+          textoExtraido = await this.plugin.voz().extraerPdf(datos.buffer.slice(datos.byteOffset, datos.byteOffset + datos.byteLength));
         } else if (nombre.endsWith('.txt') || nombre.endsWith('.md')) {
           textoExtraido = datos.toString('utf8');
         }
@@ -624,7 +624,7 @@ export class VistaDiario extends ItemView {
       return;
     }
     this.entradaEl.value = '';
-    this.entradaEl.style.height = 'auto';
+    this.entradaEl.setCssStyles({ height: 'auto' });
     this.burbuja('usuario', limpio, this.consultaChatEl);
     this.consultando = true;
     this.entradaEl.disabled = true;
@@ -683,7 +683,7 @@ export class VistaDiario extends ItemView {
     const barras = this.rachaEl.createSpan({ cls: 'diario-barras' });
     for (const dia of energiasRecientes(vault, sesion.fecha, sesion.idiomaVault)) {
       const barra = barras.createEl('i', { cls: dia.nivel ? '' : 'diario-barra-vacia' });
-      barra.style.height = dia.nivel ? `${3 + dia.nivel * 3}px` : '2px';
+      barra.setCssStyles({ height: dia.nivel ? `${3 + dia.nivel * 3}px` : '2px' });
       barra.setAttr('title', dia.fecha);
     }
   }
@@ -750,7 +750,7 @@ export class VistaDiario extends ItemView {
     if (!limpio && this.hayAdjuntos()) limpio = this.t().teComparto;
     if (!limpio) return;
     this.entradaEl.value = '';
-    this.entradaEl.style.height = 'auto';
+    this.entradaEl.setCssStyles({ height: 'auto' });
     const adjuntosTexto = [...this.chipsEl.children].map(c => c.textContent).join('  ');
     this.chipsEl.empty();
     this.burbuja('usuario', adjuntosTexto ? `${adjuntosTexto}\n${limpio}` : limpio);
@@ -883,7 +883,7 @@ export class VistaDiario extends ItemView {
       this.burbuja('asistente', t.guardadoDespedida);
       this.hablar(t.guardadoDespedidaVoz);
       this.botonNuevaSesion();
-      void this.plugin.refrescarRag('sesión aplicada');
+      void this.plugin.refrescarRag();
     } catch (e) {
       this.quitarIndicador();
       this.burbuja('error', e instanceof Error ? e.message : String(e));

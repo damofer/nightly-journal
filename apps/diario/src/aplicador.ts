@@ -89,7 +89,8 @@ function actualizarFrontmatterDiario(editor: Editor, ruta: string, ex: Extraccio
     cambiado = true;
   }
   // clave "tags" (no "etiquetas") y sin espacios: así Obsidian las reconoce
-  const previas: string[] = Array.isArray(archivo.data.tags) ? archivo.data.tags : [];
+  const crudas: unknown = archivo.data.tags;
+  const previas = Array.isArray(crudas) ? crudas.filter((t): t is string => typeof t === 'string') : [];
   const nuevas = ex.etiquetas.map(e2 => e2.trim().toLowerCase().replace(/\s+/g, '-')).filter(Boolean);
   const unidas = new Set([...previas, ...nuevas]);
   if (unidas.size !== previas.length) {

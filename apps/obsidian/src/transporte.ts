@@ -9,7 +9,7 @@ import type { FnHttpJson } from '../../diario/src/red.js';
 
 function plazo(ms: number): Promise<never> {
   return new Promise((_, rechazar) => {
-    setTimeout(() => rechazar(new Error(`timeout tras ${ms}ms`)), ms);
+    window.setTimeout(() => rechazar(new Error(`timeout tras ${ms}ms`)), ms);
   });
 }
 
