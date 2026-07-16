@@ -1,0 +1,431 @@
+/* Diario Nocturno — estilos del chat sobre las variables de Obsidian:
+   respeta el tema (claro/oscuro) del usuario. Todo con prefijo .diario- */
+
+.diario-vista {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+}
+
+.diario-encabezado {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.diario-marca {
+  font-weight: 600;
+  color: var(--interactive-accent);
+}
+
+.diario-fecha {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.diario-racha {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 99px;
+  padding: 2px 10px;
+}
+
+.diario-barras {
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+  height: 12px;
+}
+
+.diario-barras i {
+  width: 4px;
+  border-radius: 1px;
+  background: var(--interactive-accent);
+  opacity: 0.9;
+}
+
+.diario-barras i.diario-barra-vacia {
+  background: var(--background-modifier-border);
+}
+
+.diario-chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 16px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.diario-burbuja {
+  max-width: 85%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.diario-asistente {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-bottom-left-radius: 4px;
+  align-self: flex-start;
+}
+
+.diario-usuario {
+  background: var(--background-modifier-hover);
+  border-bottom-right-radius: 4px;
+  align-self: flex-end;
+}
+
+.diario-sistema {
+  align-self: center;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  background: none;
+}
+
+.diario-error {
+  align-self: center;
+  color: var(--color-red);
+  font-size: var(--font-ui-smaller);
+}
+
+.diario-escribiendo {
+  align-self: flex-start;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  padding: 4px 14px;
+}
+
+.diario-tarjeta {
+  align-self: stretch;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-left: 3px solid var(--interactive-accent);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.diario-tarjeta h3 {
+  font-size: var(--font-ui-smaller);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--interactive-accent);
+  margin: 0 0 10px;
+  font-weight: 600;
+}
+
+.diario-tarjeta-texto {
+  font-size: var(--font-ui-small);
+}
+
+.diario-codigo {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--background-primary);
+  font-family: var(--font-monospace);
+  font-size: var(--font-ui-smaller);
+}
+
+.diario-plan,
+.diario-resultado {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.diario-plan label {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  cursor: pointer;
+  font-size: var(--font-ui-small);
+}
+
+.diario-plan input[type='checkbox'] {
+  margin-top: 3px;
+}
+
+.diario-plan .diario-fuera {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.diario-resultado li {
+  font-size: var(--font-ui-small);
+}
+
+.diario-resultado .diario-hecho::before {
+  content: '✓ ';
+  color: var(--color-green);
+}
+
+.diario-resultado .diario-omitido {
+  color: var(--text-muted);
+}
+
+.diario-resultado .diario-omitido::before {
+  content: '≡ ';
+}
+
+.diario-comentario {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  margin-top: 8px;
+}
+
+.diario-tarjeta-acciones {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.diario-pie {
+  border-top: 1px solid var(--background-modifier-border);
+  padding: 10px 16px 12px;
+}
+
+.diario-composer {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.diario-entrada {
+  flex: 1;
+  resize: none;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font: inherit;
+  max-height: 130px;
+  outline: none;
+}
+
+.diario-entrada:focus {
+  border-color: var(--interactive-accent);
+}
+
+.diario-boton {
+  font-size: var(--font-ui-small);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  border-radius: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+}
+
+.diario-boton:hover {
+  border-color: var(--interactive-accent);
+}
+
+.diario-boton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.diario-primario {
+  background: var(--interactive-accent);
+  border-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  font-weight: 600;
+}
+
+.diario-primario:hover {
+  background: var(--interactive-accent-hover);
+}
+
+.diario-tenue {
+  background: none;
+  color: var(--text-muted);
+}
+
+.diario-acciones {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 8px;
+}
+
+/* ── pestañas registrar / consultar ─────────────────────────── */
+
+.diario-pestanas {
+  display: flex;
+  gap: 2px;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 99px;
+  padding: 2px;
+  margin-left: 12px;
+}
+
+.diario-pestana {
+  border: none;
+  background: none;
+  box-shadow: none;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  padding: 3px 12px;
+  border-radius: 99px;
+  cursor: pointer;
+}
+
+.diario-pestana:hover {
+  color: var(--text-normal);
+}
+
+.diario-pestana.diario-pestana-activa {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+/* ── fuentes de la consulta (chips que abren la nota) ───────── */
+
+.diario-fuentes {
+  align-self: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: -6px;
+  padding-left: 14px;
+}
+
+.diario-fuentes-etiqueta {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.diario-fuente {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 99px;
+  padding: 2px 10px;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.diario-fuente:hover {
+  color: var(--interactive-accent);
+  border-color: var(--interactive-accent);
+}
+
+/* ── fase 2: voz y adjuntos ─────────────────────────────────── */
+
+.diario-chip-voz {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 99px;
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+
+.diario-chip-voz.diario-voz-lista {
+  color: var(--interactive-accent);
+  border-color: var(--interactive-accent);
+}
+
+.diario-redondo {
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.diario-boton.diario-grabando {
+  background: var(--color-red);
+  border-color: var(--color-red);
+  color: var(--text-on-accent);
+  animation: diario-pulso 1.2s ease-in-out infinite;
+}
+
+.diario-boton.diario-escuchando {
+  border-color: var(--interactive-accent);
+  color: var(--interactive-accent);
+  animation: diario-pulso 1.6s ease-in-out infinite;
+}
+
+@keyframes diario-pulso {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.diario-boton.diario-activo {
+  color: var(--interactive-accent);
+  border-color: var(--interactive-accent);
+}
+
+.diario-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.diario-chips:not(:empty) {
+  margin-bottom: 8px;
+}
+
+.diario-chip-adj {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 99px;
+  padding: 3px 10px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.diario-aviso-audio {
+  align-self: center;
+  margin: 4px auto;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-on-accent);
+  background: var(--interactive-accent);
+  border: none;
+  border-radius: 99px;
+  padding: 5px 14px;
+  cursor: pointer;
+}
+
+.diario-selector-voz {
+  font-size: var(--font-ui-small);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 5px 8px;
+  max-width: 180px;
+}

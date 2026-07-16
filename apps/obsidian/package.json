@@ -1,0 +1,18 @@
+{
+  "name": "diario-nocturno",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Plugin de Obsidian del diario conversacional (apps/diario como núcleo)",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "npm run check && node esbuild.config.mjs production",
+    "check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "esbuild": "^0.28.1",
+    "obsidian": "^1.7.2",
+    "typescript": "^5.7.0"
+  }
+}

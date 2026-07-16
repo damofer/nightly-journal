@@ -1,0 +1,36 @@
+# Al pushear un tag (igual a la versión del manifest, sin "v"), compila el
+# plugin y crea el release con los tres assets que exige Obsidian.
+name: Release
+
+on:
+  push:
+    tags: ['*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar dependencias
+        run: |
+          npm install --prefix apps/diario
+          npm install --prefix apps/obsidian
+
+      - name: Compilar
+        run: npm run build --prefix apps/obsidian
+
+      - name: Crear release con los assets del plugin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          gh release create "$tag" --title "$tag" \
+            apps/obsidian/main.js apps/obsidian/manifest.json apps/obsidian/styles.css

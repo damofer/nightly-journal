@@ -1,0 +1,9 @@
+{
+  "name": "diario-nucleo",
+  "private": true,
+  "type": "module",
+  "description": "Núcleo del diario (entrevista, extracción, RAG, escritura del vault)",
+  "dependencies": {
+    "gray-matter": "^4.0.3"
+  }
+}
