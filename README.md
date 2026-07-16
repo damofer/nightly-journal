@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.png" alt="Nightly Journal" width="140">
+</p>
+
 # Nightly Journal
 
 **A local AI interviews you at the end of your day and writes your journal for you — 100% local via [Ollama](https://ollama.com).**
