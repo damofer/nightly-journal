@@ -6,13 +6,14 @@
 // libres con detección de pausa) y adjuntos (fotos multimodales, PDF/txt).
 
 import { Buffer } from 'node:buffer';
-import { ItemView, Notice, type WorkspaceLeaf } from 'obsidian';
+import { ItemView, type WorkspaceLeaf } from 'obsidian';
 import { TEXTOS_UI, type TextosUi } from '../../diario/src/idioma.js';
 import { energiasRecientes, racha } from '../../diario/src/racha.js';
 import { ConsultaDiario } from '../../diario/src/consulta.js';
 import type { ResultadoRag } from '../../diario/src/rag.js';
 import type { ItemPlan } from '../../diario/src/aplicador.js';
 import { descargarModelo, estadoOllama, listarModelos } from './transporte.js';
+import { AsistenteVoz } from './instalador_voz.js';
 import type { SaludVoz, VozKokoro } from './voz.js';
 import type DiarioPlugin from './main.js';
 
@@ -201,9 +202,9 @@ export class VistaDiario extends ItemView {
     );
     this.registerDomEvent(this.btnVoz, 'click', () => {
       if (!this.saludVoz.kokoro && !this.saludVoz.stt) {
-        // sin sidecar la voz no puede encenderse: decir POR QUÉ en vez de
-        // dejar un botón que no hace nada (reportado en vivo)
-        new Notice(plantilla(this.t().vozSinSidecar, { url: this.plugin.ajustes.vozUrl }), 10000);
+        // sin sidecar la voz no puede encenderse: abrir el asistente que la
+        // instala y configura, en vez de un botón que no hace nada
+        new AsistenteVoz(this.app, this.plugin).open();
         return;
       }
       const opciones: ('kokoro' | 'off')[] = this.saludVoz.kokoro ? ['kokoro', 'off'] : ['off'];

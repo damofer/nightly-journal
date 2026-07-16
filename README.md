@@ -71,11 +71,11 @@ If Ollama or a model is missing, the plugin shows a friendly first-run card — 
 
 ### Voice sidecar (optional)
 
-Voice uses a local FastAPI sidecar with Kokoro (TTS) and Whisper (STT), included in this repository at `apps/voz/servidor_voz.py`:
+Voice uses a local sidecar with Kokoro (TTS) and Whisper (STT). **The easy way**: install [Python 3.10–3.12](https://www.python.org/downloads/), then in the plugin go to *Settings → Voice → set up voice* — the assistant creates an isolated environment, installs everything (~3 GB, once), writes the sidecar and starts it for you, no terminal needed. It also opens when you click the voice button in the journal view. Manual alternative, with the sidecar included at `apps/voz/servidor_voz.py`:
 
 ```
 python -m venv .venv
-.venv/Scripts/pip install fastapi uvicorn kokoro faster-whisper pymupdf soundfile num2words
+.venv/Scripts/pip install torch kokoro "misaki[en,es]" transformers fastapi uvicorn soundfile pymupdf imageio-ffmpeg
 .venv/Scripts/python apps/voz/servidor_voz.py 8765
 ```
 
@@ -152,11 +152,11 @@ Si falta Ollama o un modelo, el plugin muestra una tarjeta de primer arranque �
 
 ### Sidecar de voz (opcional)
 
-La voz usa un sidecar local FastAPI con Kokoro (TTS) y Whisper (STT), incluido en este repositorio en `apps/voz/servidor_voz.py`:
+La voz usa un sidecar local con Kokoro (TTS) y Whisper (STT). **La vía fácil**: instala [Python 3.10–3.12](https://www.python.org/downloads/) y en el plugin ve a *Ajustes → Voz → configurar la voz* — el asistente crea un entorno aislado, instala todo (~3 GB, una sola vez), escribe el sidecar y lo arranca por ti, sin terminal. También se abre al pulsar el botón de voz en la vista del diario. Alternativa manual, con el sidecar incluido en `apps/voz/servidor_voz.py`:
 
 ```
 python -m venv .venv
-.venv/Scripts/pip install fastapi uvicorn kokoro faster-whisper pymupdf soundfile num2words
+.venv/Scripts/pip install torch kokoro "misaki[en,es]" transformers fastapi uvicorn soundfile pymupdf imageio-ffmpeg
 .venv/Scripts/python apps/voz/servidor_voz.py 8765
 ```
 

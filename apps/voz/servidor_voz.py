@@ -48,6 +48,11 @@ import uvicorn
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 PUERTO = int(sys.argv[1]) if len(sys.argv) > 1 else 8765
+# En GPU el turbo grande va sobrado; en CPU (portátiles) el small responde en
+# segundos con calidad digna en es/en. WHISPER_MODEL en el entorno lo fuerza.
+WHISPER_MODEL = os.environ.get("WHISPER_MODEL") or (
+    "openai/whisper-large-v3-turbo" if DEVICE == "cuda" else "openai/whisper-small"
+)
 
 # Voces de Kokoro por idioma. El prefijo del id decide el pipeline:
 # e* = español, a* = inglés americano. genero: f/m (la UI lo traduce).
@@ -94,11 +99,11 @@ def cargar_modelos():
         estado["error"] = f"Kokoro: {e}"
         print(f"[voz] Error cargando Kokoro: {e}")
     try:
-        print("[voz] Cargando Whisper large-v3-turbo...")
+        print(f"[voz] Cargando Whisper ({WHISPER_MODEL})...")
         from transformers import pipeline
         whisper_pipe = pipeline(
             "automatic-speech-recognition",
-            model="openai/whisper-large-v3-turbo",
+            model=WHISPER_MODEL,
             device=DEVICE,
         )
         estado["stt"] = True

@@ -429,3 +429,29 @@
   padding: 5px 8px;
   max-width: 180px;
 }
+
+/* ── asistente de voz (modal) ──────────────────────────────────── */
+
+.diario-asistente-voz .diario-asistente-pasos {
+  margin: 0.8em 0 0.2em;
+}
+
+.diario-asistente-voz .diario-asistente-pasos div {
+  margin: 0.2em 0;
+  font-size: var(--font-ui-small);
+}
+
+.diario-asistente-voz .diario-asistente-log {
+  margin-top: 0.6em;
+  padding: 8px 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  font-family: var(--font-monospace);
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  word-break: break-all;
+}

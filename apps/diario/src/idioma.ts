@@ -203,7 +203,6 @@ export interface TextosUi {
   estadoReintentar: string;
   estadoElegirModelo: string;
   estadoDescargaFallo: string; // plantilla con {error}
-  vozSinSidecar: string; // plantilla con {url}
   pestanaRegistrar: string;
   pestanaConsultar: string;
   consultaPlaceholder: string;
@@ -268,7 +267,6 @@ export const TEXTOS_UI: Record<Idioma, TextosUi> = {
     estadoReintentar: '↻ reintentar',
     estadoElegirModelo: 'o usa un modelo ya instalado…',
     estadoDescargaFallo: 'la descarga falló ({error}) — intenta desde una terminal con el comando de abajo',
-    vozSinSidecar: 'La voz necesita el sidecar local (Whisper + Kokoro) corriendo en {url}. Sin él, el diario funciona en solo texto — mira "Sidecar de voz" en el README del plugin.',
     pestanaRegistrar: '✎ registrar',
     pestanaConsultar: '🔍 consultar',
     consultaPlaceholder: 'pregúntale a tu memoria…',
@@ -331,7 +329,6 @@ export const TEXTOS_UI: Record<Idioma, TextosUi> = {
     estadoReintentar: '↻ retry',
     estadoElegirModelo: 'or use an installed model…',
     estadoDescargaFallo: 'the download failed ({error}) — try from a terminal with the command below',
-    vozSinSidecar: 'Voice needs the local sidecar (Whisper + Kokoro) running at {url}. Without it the journal is text-only — see "Voice sidecar" in the plugin README.',
     pestanaRegistrar: '✎ journal',
     pestanaConsultar: '🔍 ask',
     consultaPlaceholder: 'ask your memory…',

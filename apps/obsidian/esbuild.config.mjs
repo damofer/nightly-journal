@@ -20,6 +20,9 @@ const ctx = await esbuild.context({
   platform: 'node', // externaliza los builtins node:* automáticamente
   target: 'es2022',
   external: ['obsidian', 'electron'],
+  // el sidecar de voz viaja DENTRO del bundle como texto: el asistente de
+  // voz lo escribe a disco al configurar (la release solo lleva main.js)
+  loader: { '.py': 'text' },
   outfile,
   sourcemap: prod ? false : 'inline',
   minify: false, // legible: requisito práctico para la revisión de comunidad

@@ -3,6 +3,7 @@
 
 import { getLanguage, PluginSettingTab, Setting, type App } from 'obsidian';
 import type { Idioma } from '../../diario/src/idioma.js';
+import { AsistenteVoz } from './instalador_voz.js';
 import type DiarioPlugin from './main.js';
 
 // Idioma de la app de Obsidian ('en' para todo lo que no sea español).
@@ -68,6 +69,9 @@ const ETIQUETAS = {
     gitDesc: 'ADVERTENCIA: crea un repositorio git DENTRO de tu vault y hace un commit por sesión. Habilita el botón deshacer. Déjalo apagado si tu vault ya está en git o usas otro plugin de git.',
     voz: 'Voz',
     vozDesc: 'Hablar con el diario y que te lea las respuestas. Requiere el sidecar de voz local (Whisper + Kokoro); sin él, el plugin funciona en solo texto.',
+    vozAsistente: 'Asistente de voz',
+    vozAsistenteDesc: 'Instala y configura el motor local de voz por ti (sin terminal): Python + Whisper + Kokoro.',
+    vozAsistenteBoton: '⚙ configurar la voz',
     vozUrl: 'URL del sidecar de voz',
     vozUrlDesc: 'Dónde corre el sidecar (por defecto http://127.0.0.1:8765).',
     vozAvanzado: 'Arranque automático del sidecar (avanzado)',
@@ -94,6 +98,9 @@ const ETIQUETAS = {
     gitDesc: 'WARNING: creates a git repository INSIDE your vault and commits once per session. Enables the undo button. Keep it off if your vault is already in git or you use another git plugin.',
     voz: 'Voice',
     vozDesc: 'Talk to the journal and have it read replies aloud. Requires the local voice sidecar (Whisper + Kokoro); without it the plugin works text-only.',
+    vozAsistente: 'Voice setup assistant',
+    vozAsistenteDesc: 'Installs and configures the local voice engine for you (no terminal): Python + Whisper + Kokoro.',
+    vozAsistenteBoton: '⚙ set up voice',
     vozUrl: 'Voice sidecar URL',
     vozUrlDesc: 'Where the sidecar runs (default http://127.0.0.1:8765).',
     vozAvanzado: 'Sidecar auto-start (advanced)',
@@ -207,6 +214,16 @@ export class PestanaAjustes extends PluginSettingTab {
           a.vozActivada = valor;
           await this.plugin.guardarAjustes();
         })
+      );
+
+    new Setting(containerEl)
+      .setName(t.vozAsistente)
+      .setDesc(t.vozAsistenteDesc)
+      .addButton(b =>
+        b
+          .setButtonText(t.vozAsistenteBoton)
+          .setCta()
+          .onClick(() => new AsistenteVoz(this.app, this.plugin).open())
       );
 
     new Setting(containerEl)
