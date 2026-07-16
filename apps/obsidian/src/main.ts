@@ -2,7 +2,7 @@
 // (SesionDiario, aplicador, RAG) apuntándolo a la ruta del vault. Solo
 // desktop (isDesktopOnly): el núcleo usa node:fs y child_process.
 
-import { FileSystemAdapter, Notice, Plugin } from 'obsidian';
+import { addIcon, FileSystemAdapter, Notice, Plugin } from 'obsidian';
 import { fijarTransporte } from '../../diario/src/red.js';
 import { SesionDiario } from '../../diario/src/sesion.js';
 import { Rag } from '../../diario/src/rag.js';
@@ -11,6 +11,7 @@ import type { Idioma } from '../../diario/src/idioma.js';
 import { AJUSTES_DEFECTO, idiomaDeObsidian, PestanaAjustes, type AjustesDiario } from './ajustes.js';
 import { transporteRequestUrl } from './transporte.js';
 import { ClienteVoz } from './voz.js';
+import { ICONO_PLUGIN } from './icono.js';
 import { TIPO_VISTA_DIARIO, VistaDiario } from './vista.js';
 
 export default class DiarioPlugin extends Plugin {
@@ -30,8 +31,9 @@ export default class DiarioPlugin extends Plugin {
     // los nombres de comandos/ribbon se fijan al cargar: cambiar el idioma
     // los actualiza tras recargar Obsidian (suficiente para algo tan menor)
     const en = this.idioma() === 'en';
+    addIcon('nightly-journal', ICONO_PLUGIN);
     this.registerView(TIPO_VISTA_DIARIO, hoja => new VistaDiario(hoja, this));
-    this.addRibbonIcon('moon', en ? 'Nightly journal' : 'Diario nocturno', () => void this.abrirVista());
+    this.addRibbonIcon('nightly-journal', en ? 'Nightly journal' : 'Diario nocturno', () => void this.abrirVista());
     this.addCommand({
       id: 'abrir',
       name: en ? 'Open nightly journal' : 'Abrir diario nocturno',
