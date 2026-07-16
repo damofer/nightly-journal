@@ -1,6 +1,6 @@
 {
   "name": "nightly-journal",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "private": true,
   "type": "module",
   "description": "Plugin de Obsidian del diario conversacional (apps/diario como núcleo)",

@@ -29,8 +29,16 @@ const DEPENDENCIAS = [
   'imageio-ffmpeg',
 ];
 
-// Python 3.10–3.12: el rango con ruedas publicadas para TODO el stack
-// (spacy/blis para el G2P inglés aún no cubren 3.13+ de forma fiable).
+// Python 3.10–3.12: kokoro 0.9.4 declara Requires-Python >=3.10,<3.13
+// (verificado: pip en 3.14 lo rechaza de plano). La "última" de python.org
+// es 3.13/3.14, así que el botón baja el instalador CORRECTO directamente.
+const URL_PYTHON =
+  process.platform === 'win32'
+    ? 'https://www.python.org/ftp/python/3.12.10/python-3.12.10-amd64.exe'
+    : process.platform === 'darwin'
+      ? 'https://www.python.org/ftp/python/3.12.10/python-3.12.10-macos11.pkg'
+      : 'https://www.python.org/downloads/release/python-31210/';
+
 const CANDIDATOS_PYTHON: [string, string[]][] =
   process.platform === 'win32'
     ? [
@@ -59,10 +67,12 @@ const TEXTOS = {
     btnInstalar: '⚙ instalar y configurar',
     btnCerrar: 'cerrar',
     btnReintentar: '↻ reintentar',
-    btnPython: '⬇ descargar Python',
+    btnPython: '⬇ descargar Python 3.12',
     pasoPython: 'buscar Python (3.10–3.12)',
     sinPython:
-      'No encontré Python 3.10–3.12 en este equipo. Instálalo desde python.org (en Windows marca "Add python.exe to PATH") y pulsa reintentar.',
+      'No encontré Python en este equipo. El motor de voz necesita Python 3.10–3.12 — ojo: la "última" de python.org (3.13/3.14) aún NO sirve, kokoro no la soporta. El botón descarga el instalador correcto de 3.12; en Windows marca "Add python.exe to PATH" al instalar y luego pulsa reintentar.',
+    sinPythonVersion:
+      'Encontré {version}, pero el motor de voz necesita Python 3.10–3.12 (kokoro aún no soporta 3.13+). El botón descarga el instalador de 3.12 — puede convivir con el Python que ya tienes. En Windows marca "Add python.exe to PATH" al instalar y luego pulsa reintentar.',
     pasoVenv: 'crear el entorno aislado (venv)',
     pasoDeps: 'instalar dependencias (~2 GB, solo la primera vez)',
     pasoScript: 'escribir el sidecar y guardar los ajustes',
@@ -82,10 +92,12 @@ const TEXTOS = {
     btnInstalar: '⚙ install and set up',
     btnCerrar: 'close',
     btnReintentar: '↻ retry',
-    btnPython: '⬇ download Python',
+    btnPython: '⬇ download Python 3.12',
     pasoPython: 'find Python (3.10–3.12)',
     sinPython:
-      'I couldn\'t find Python 3.10–3.12 on this machine. Install it from python.org (on Windows tick "Add python.exe to PATH") and hit retry.',
+      'I couldn\'t find Python on this machine. The voice engine needs Python 3.10–3.12 — note: the "latest" from python.org (3.13/3.14) does NOT work yet, kokoro doesn\'t support it. The button downloads the right 3.12 installer; on Windows tick "Add python.exe to PATH" while installing, then hit retry.',
+    sinPythonVersion:
+      'I found {version}, but the voice engine needs Python 3.10–3.12 (kokoro doesn\'t support 3.13+ yet). The button downloads the 3.12 installer — it can live alongside the Python you already have. On Windows tick "Add python.exe to PATH" while installing, then hit retry.',
     pasoVenv: 'create the isolated environment (venv)',
     pasoDeps: 'install dependencies (~2 GB, first time only)',
     pasoScript: 'write the sidecar and save settings',
@@ -227,26 +239,38 @@ export class AsistenteVoz extends Modal {
     });
   }
 
-  private async detectarPython(): Promise<{ cmd: string; args: string[]; version: string } | null> {
+  // Devuelve el primer Python compatible; si solo hay versiones fuera de
+  // rango (ej. la 3.14 "última" de python.org), las reporta para que la
+  // pantalla de fallo diga exactamente qué pasa en vez de "no encontré".
+  private async detectarPython(): Promise<{
+    python: { cmd: string; args: string[]; version: string } | null;
+    fueraDeRango: string[];
+  }> {
+    const fueraDeRango: string[] = [];
     for (const [cmd, args] of CANDIDATOS_PYTHON) {
       const version = await this.probarPython(cmd, args);
       const m = version?.match(/Python 3\.(\d+)\./);
-      if (version && m && Number(m[1]) >= 10 && Number(m[1]) <= 12) return { cmd, args, version };
+      if (!version || !m) continue;
+      if (Number(m[1]) >= 10 && Number(m[1]) <= 12) return { python: { cmd, args, version }, fueraDeRango };
+      if (!fueraDeRango.includes(version)) fueraDeRango.push(version);
     }
-    return null;
+    return { python: null, fueraDeRango };
   }
 
   // ── pantallas de salida ───────────────────────────────────────
 
-  private pantallaSinPython(): void {
-    this.pasosEl.createDiv({ cls: 'diario-tarjeta-texto', text: this.t.sinPython });
+  private pantallaSinPython(fueraDeRango: string[]): void {
+    const texto = fueraDeRango.length
+      ? this.t.sinPythonVersion.replace('{version}', fueraDeRango.join(', '))
+      : this.t.sinPython;
+    this.pasosEl.createDiv({ cls: 'diario-tarjeta-texto', text: texto });
     this.botonesEl.empty();
     new Setting(this.botonesEl)
       .addButton(b =>
         b
           .setButtonText(this.t.btnPython)
           .setCta()
-          .onClick(() => window.open('https://www.python.org/downloads/'))
+          .onClick(() => window.open(URL_PYTHON))
       )
       .addButton(b => b.setButtonText(this.t.btnReintentar).onClick(() => void this.ejecutar()));
   }
@@ -273,11 +297,11 @@ export class AsistenteVoz extends Modal {
 
     // 1. Python
     const pasoPython = this.nuevoPaso(t.pasoPython);
-    const python = await this.detectarPython();
+    const { python, fueraDeRango } = await this.detectarPython();
     if (this.cancelado) return;
     if (!python) {
       this.cerrarPaso(pasoPython, false);
-      this.pantallaSinPython();
+      this.pantallaSinPython(fueraDeRango);
       return;
     }
     this.log(`${python.version} · ${python.cmd} ${python.args.join(' ')}`.trim());
