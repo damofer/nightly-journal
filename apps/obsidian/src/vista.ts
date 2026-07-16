@@ -6,13 +6,13 @@
 // libres con detección de pausa) y adjuntos (fotos multimodales, PDF/txt).
 
 import { Buffer } from 'node:buffer';
-import { ItemView, type WorkspaceLeaf } from 'obsidian';
+import { ItemView, Notice, type WorkspaceLeaf } from 'obsidian';
 import { TEXTOS_UI, type TextosUi } from '../../diario/src/idioma.js';
 import { energiasRecientes, racha } from '../../diario/src/racha.js';
 import { ConsultaDiario } from '../../diario/src/consulta.js';
 import type { ResultadoRag } from '../../diario/src/rag.js';
 import type { ItemPlan } from '../../diario/src/aplicador.js';
-import { estadoOllama } from './transporte.js';
+import { descargarModelo, estadoOllama, listarModelos } from './transporte.js';
 import type { SaludVoz, VozKokoro } from './voz.js';
 import type DiarioPlugin from './main.js';
 
@@ -200,6 +200,12 @@ export class VistaDiario extends ItemView {
       this.manos.activo ? this.manosDesactivar() : void this.manosActivar()
     );
     this.registerDomEvent(this.btnVoz, 'click', () => {
+      if (!this.saludVoz.kokoro && !this.saludVoz.stt) {
+        // sin sidecar la voz no puede encenderse: decir POR QUÉ en vez de
+        // dejar un botón que no hace nada (reportado en vivo)
+        new Notice(plantilla(this.t().vozSinSidecar, { url: this.plugin.ajustes.vozUrl }), 10000);
+        return;
+      }
       const opciones: ('kokoro' | 'off')[] = this.saludVoz.kokoro ? ['kokoro', 'off'] : ['off'];
       const i = opciones.indexOf(this.motor ?? 'off');
       this.motor = opciones[(i + 1) % opciones.length];
@@ -731,6 +737,27 @@ export class VistaDiario extends ItemView {
       enlace.createEl('button', { cls: 'diario-boton diario-primario', text: t.estadoDescargarOllama });
     } else if (!st.modeloOk) {
       tarjeta.createDiv({ cls: 'diario-tarjeta-texto', text: plantilla(t.estadoSinModelo, { modelo }) });
+      const estadoDescarga = tarjeta.createDiv({ cls: 'diario-tarjeta-texto' });
+      const descargar = acciones.createEl('button', { cls: 'diario-boton diario-primario', text: t.estadoBotonModelo });
+      this.registerDomEvent(descargar, 'click', () => void this.descargarModeloYReintentar(descargar, estadoDescarga));
+      // con otro modelo ya descargado no hace falta bajar nada: elegirlo
+      // aquí lo fija para entrevista Y extracción (que el cierre no falle
+      // por un segundo modelo ausente)
+      const instalados = (await listarModelos(ollamaUrl)).filter(m => m !== modelo);
+      if (instalados.length) {
+        const selector = acciones.createEl('select', { cls: 'dropdown' });
+        selector.createEl('option', { text: t.estadoElegirModelo, value: '' });
+        for (const m of instalados) selector.createEl('option', { text: m, value: m });
+        this.registerDomEvent(selector, 'change', () => {
+          if (!selector.value) return;
+          void (async () => {
+            this.plugin.ajustes.modelo = selector.value;
+            this.plugin.ajustes.modeloExtractor = selector.value;
+            await this.plugin.guardarAjustes();
+            await this.iniciarSesion();
+          })();
+        });
+      }
       tarjeta.createEl('code', { cls: 'diario-codigo', text: `ollama pull ${modelo}` });
     } else {
       tarjeta.createDiv({ cls: 'diario-tarjeta-texto', text: `${t.errorIniciar}: ${mensajeError}` });
@@ -740,6 +767,39 @@ export class VistaDiario extends ItemView {
     this.registerDomEvent(reintentar, 'click', () => void this.iniciarSesion());
     tarjeta.appendChild(acciones);
     this.bajarScroll();
+  }
+
+  // Descarga el modelo configurado desde la propia tarjeta: dispara
+  // /api/pull (sin progreso — requestUrl no streamea) y sondea /api/tags
+  // hasta que el modelo aparezca; al llegar, reintenta la sesión solo.
+  private async descargarModeloYReintentar(boton: HTMLButtonElement, estado: HTMLElement): Promise<void> {
+    const t = this.t();
+    const { ollamaUrl, modelo } = this.plugin.ajustes;
+    boton.disabled = true;
+    estado.setText(t.estadoDescargando);
+    let fallo: string | null = null;
+    void descargarModelo(ollamaUrl, modelo).then(r => {
+      if (!r.ok) fallo = r.error ?? 'error';
+    });
+    const inicio = Date.now();
+    const espera = (ms: number) => new Promise<void>(listo => window.setTimeout(listo, ms));
+    for (;;) {
+      await espera(4000);
+      // la vista se cerró o el usuario ya eligió otro modelo del selector
+      if (this.cerrada || this.plugin.ajustes.modelo !== modelo) return;
+      const st = await estadoOllama(ollamaUrl, modelo);
+      if (st.modeloOk) {
+        await this.iniciarSesion();
+        return;
+      }
+      if (fallo || Date.now() - inicio > 45 * 60_000) {
+        estado.setText(plantilla(t.estadoDescargaFallo, { error: fallo ?? 'timeout' }));
+        boton.disabled = false;
+        return;
+      }
+      const min = Math.floor((Date.now() - inicio) / 60_000);
+      if (min >= 1) estado.setText(`${t.estadoDescargando} (${min} min)`);
+    }
   }
 
   private async enviar(texto: string): Promise<void> {
