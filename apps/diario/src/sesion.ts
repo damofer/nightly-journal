@@ -65,6 +65,27 @@ export function sinPreambulo(texto: string): string {
   return texto.trim().replace(/^[^\n]{0,80}:\s*\n+/, '');
 }
 
+// gemma3 a veces REPITE en su respuesta los bloques internos que se le
+// inyectan como system intercalado (recuerdos del RAG, nudges): la plantilla
+// de chat de los modelos pequeños los trata como texto a continuar (visto en
+// vivo: el bloque de recuerdos completo apareció en el chat). Las reglas de
+// prompt no lo evitan — la guarda determinista sí: se corta la respuesta
+// donde asome cualquier bloque inyectado o una línea con el formato de los
+// recuerdos ("- [nota] … ([[fecha]])"); si no queda nada, pregunta neutra.
+export function sinFugaDeContexto(respuesta: string, inyectados: string[], idioma: Idioma): string {
+  let corte = respuesta.length;
+  for (const bloque of inyectados) {
+    const firma = bloque.slice(0, 30);
+    const i = firma ? respuesta.indexOf(firma) : -1;
+    if (i !== -1 && i < corte) corte = i;
+  }
+  const bala = /^- \[[^\]\n]+\] .*\(\[\[/m.exec(respuesta);
+  if (bala && bala.index < corte) corte = bala.index;
+  const limpia = respuesta.slice(0, corte).trim();
+  if (limpia) return limpia;
+  return idioma === 'en' ? 'What else would you like to tell me about your day?' : '¿Qué más quieres contarme de tu día?';
+}
+
 // La persona preguntó pero el diario NO tiene nada suficientemente parecido:
 // honestidad en vez de conexiones forzadas (sin adjuntar recuerdos débiles).
 const NUDGE_SIN_REGISTRO: Record<Idioma, string> = {
@@ -267,7 +288,12 @@ export class SesionDiario {
       }
     }
 
-    const respuesta = await conversar(this.cfg, [...this.mensajes, ...extra], { temperature: temperatura });
+    const bruta = await conversar(this.cfg, [...this.mensajes, ...extra], { temperature: temperatura });
+    const respuesta = sinFugaDeContexto(
+      bruta,
+      extra.map(m => m.content),
+      this.idiomaUi
+    );
     this.mensajes.push({ role: 'assistant', content: respuesta });
     return respuesta;
   }
