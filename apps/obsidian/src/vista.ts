@@ -107,7 +107,7 @@ export class VistaDiario extends ItemView {
   }
 
   getIcon(): string {
-    return 'nightly-journal';
+    return 'moon';
   }
 
   private t(): TextosUi {
