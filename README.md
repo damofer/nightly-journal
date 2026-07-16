@@ -4,6 +4,8 @@
 
 **Una IA local te entrevista al final del día y escribe tu diario por ti — 100% local con [Ollama](https://ollama.com).**
 
+![Nightly Journal running inside Obsidian: the interview tab with voice ready](screenshot.webp)
+
 [English](#english) · [Español](#español)
 
 ---
