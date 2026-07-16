@@ -9,6 +9,7 @@ import { Rag } from '../../diario/src/rag.js';
 import type { Config } from '../../diario/src/config.js';
 import type { Idioma } from '../../diario/src/idioma.js';
 import { AJUSTES_DEFECTO, idiomaDeObsidian, PestanaAjustes, type AjustesDiario } from './ajustes.js';
+import { refrescarScriptGestionado } from './instalador_voz.js';
 import { transporteRequestUrl } from './transporte.js';
 import { ClienteVoz } from './voz.js';
 import { TIPO_VISTA_DIARIO, VistaDiario } from './vista.js';
@@ -26,6 +27,8 @@ export default class DiarioPlugin extends Plugin {
     // dentro de Obsidian el fetch del renderer es bloqueado por CORS contra
     // localhost: TODO el HTTP del núcleo va por requestUrl
     fijarTransporte(transporteRequestUrl);
+    // el sidecar gestionado por el asistente se actualiza con el plugin
+    refrescarScriptGestionado(this.ajustes);
 
     // los nombres de comandos/ribbon se fijan al cargar: cambiar el idioma
     // los actualiza tras recargar Obsidian (suficiente para algo tan menor)

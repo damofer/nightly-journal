@@ -6,11 +6,12 @@
 // vivo, y todo 100% local.
 
 import { spawn, type ChildProcess } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { Modal, Notice, Setting, type App } from 'obsidian';
 import servidorVozPy from '../../voz/servidor_voz.py';
+import type { AjustesDiario } from './ajustes.js';
 import type DiarioPlugin from './main.js';
 
 // Receta verificada de punta a punta en un venv limpio (Windows, Python
@@ -122,6 +123,22 @@ export function dirVoz(): string {
 }
 
 const espera = (ms: number) => new Promise<void>(listo => window.setTimeout(listo, ms));
+
+// El asistente escribe el sidecar una sola vez, pero las versiones nuevas
+// del plugin traen el .py corregido dentro del bundle: si el script
+// configurado es el GESTIONADO (vive en dirVoz), se refresca al cargar el
+// plugin para que los fixes lleguen sin reinstalar nada. Los scripts
+// apuntados a mano (p. ej. el del monorepo) no se tocan.
+export function refrescarScriptGestionado(ajustes: AjustesDiario): void {
+  try {
+    if (!ajustes.vozScript) return;
+    const gestionado = join(dirVoz(), 'servidor_voz.py');
+    if (resolve(ajustes.vozScript) !== resolve(gestionado) || !existsSync(gestionado)) return;
+    if (readFileSync(gestionado, 'utf8') !== servidorVozPy) writeFileSync(gestionado, servidorVozPy, 'utf8');
+  } catch {
+    // sin permisos o similar: el sidecar existente sigue funcionando
+  }
+}
 
 export class AsistenteVoz extends Modal {
   private t: (typeof TEXTOS)['es'];

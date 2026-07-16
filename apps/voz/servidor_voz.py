@@ -32,10 +32,22 @@ if os.name == "nt" and not shutil.which("ffmpeg"):
                 os.environ["PATH"] += ";" + winreg.QueryValueEx(_key, "Path")[0]
         except OSError:
             pass
+# Sin ffmpeg del sistema: el binario de imageio-ffmpeg trae nombre
+# versionado (ffmpeg-win-x86_64-v7.1.exe), así que añadir su carpeta al
+# PATH no basta — transformers invoca literalmente "ffmpeg" (medido: STT
+# fallaba en máquinas limpias con TTS funcionando). Se copia UNA vez junto
+# a este script con el nombre canónico y se antepone esta carpeta al PATH.
 if not shutil.which("ffmpeg"):
     try:
         import imageio_ffmpeg
-        os.environ["PATH"] += os.pathsep + os.path.dirname(imageio_ffmpeg.get_ffmpeg_exe())
+        _exe = imageio_ffmpeg.get_ffmpeg_exe()
+        _dir = os.path.dirname(os.path.abspath(__file__))
+        _destino = os.path.join(_dir, "ffmpeg.exe" if os.name == "nt" else "ffmpeg")
+        if not os.path.exists(_destino):
+            shutil.copyfile(_exe, _destino)
+            if os.name != "nt":
+                os.chmod(_destino, 0o755)
+        os.environ["PATH"] = _dir + os.pathsep + os.environ["PATH"]
     except Exception:
         pass
 
@@ -246,11 +258,14 @@ async def stt(req: Request):
     idioma = req.query_params.get("idioma")
     if idioma not in IDIOMAS:
         idioma = "es"
-    resultado = whisper_pipe(
-        cuerpo,
-        generate_kwargs={"language": idioma},
-        return_timestamps=True,
-    )
+    try:
+        resultado = whisper_pipe(
+            cuerpo,
+            generate_kwargs={"language": idioma},
+            return_timestamps=True,
+        )
+    except Exception as e:  # típico: ffmpeg ausente o audio corrupto
+        return JSONResponse({"error": f"stt: {e}"}, status_code=500)
     return {"texto": resultado["text"].strip()}
 
 
