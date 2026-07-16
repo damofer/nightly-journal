@@ -16,7 +16,7 @@ import { estadoOllama } from './transporte.js';
 import type { SaludVoz, VozKokoro } from './voz.js';
 import type DiarioPlugin from './main.js';
 
-export const TIPO_VISTA_DIARIO = 'diario-nocturno';
+export const TIPO_VISTA_DIARIO = 'nightly-journal';
 
 const EXT_IMAGEN = /\.(jpe?g|png|gif|webp|bmp)$/i;
 

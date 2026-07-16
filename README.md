@@ -1,4 +1,4 @@
-# Diario Nocturno
+# Nightly Journal
 
 **A local AI interviews you at the end of your day and writes your journal for you — 100% local via [Ollama](https://ollama.com).**
 
@@ -49,7 +49,7 @@ If Ollama or a model is missing, the plugin shows a friendly first-run card with
 
 ### How to use
 
-1. Click the 🌙 moon icon in the ribbon (or run the command *"Abrir diario nocturno"*).
+1. Click the 🌙 moon icon in the ribbon (or run the command *"Open nightly journal"*).
 2. Tell it about your day. Attach photos or documents with 📎 if you like.
 3. Press *"☾ close the day and save"* (or just say "nothing else").
 4. Review the writing plan, untick what you don't want, confirm.

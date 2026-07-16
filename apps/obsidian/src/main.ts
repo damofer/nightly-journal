@@ -1,4 +1,4 @@
-// Diario Nocturno: plugin de Obsidian que reusa el núcleo de apps/diario
+// Nightly Journal: plugin de Obsidian que reusa el núcleo de apps/diario
 // (SesionDiario, aplicador, RAG) apuntándolo a la ruta del vault. Solo
 // desktop (isDesktopOnly): el núcleo usa node:fs y child_process.
 
@@ -27,12 +27,19 @@ export default class DiarioPlugin extends Plugin {
     // localhost: TODO el HTTP del núcleo va por requestUrl
     fijarTransporte(transporteRequestUrl);
 
+    // los nombres de comandos/ribbon se fijan al cargar: cambiar el idioma
+    // los actualiza tras recargar Obsidian (suficiente para algo tan menor)
+    const en = this.idioma() === 'en';
     this.registerView(TIPO_VISTA_DIARIO, hoja => new VistaDiario(hoja, this));
-    this.addRibbonIcon('moon', 'Diario nocturno', () => void this.abrirVista());
-    this.addCommand({ id: 'abrir', name: 'Abrir diario nocturno', callback: () => void this.abrirVista() });
+    this.addRibbonIcon('moon', en ? 'Nightly journal' : 'Diario nocturno', () => void this.abrirVista());
+    this.addCommand({
+      id: 'abrir',
+      name: en ? 'Open nightly journal' : 'Abrir diario nocturno',
+      callback: () => void this.abrirVista(),
+    });
     this.addCommand({
       id: 'nueva-sesion',
-      name: 'Nueva sesión',
+      name: en ? 'New session' : 'Nueva sesión',
       callback: () => {
         this.sesion = null;
         void this.abrirVista(true);
@@ -112,10 +119,10 @@ export default class DiarioPlugin extends Plugin {
       this.rag ??= new Rag(this.configActual().vault, this.configActual());
       const r = await this.rag.reindexar();
       if (this.rag.activo && r.embebidas) {
-        console.log(`[diario-nocturno] rag ${motivo}: ${r.embebidas} nota(s) embebida(s) · ${r.total} en el índice`);
+        console.log(`[nightly-journal] rag ${motivo}: ${r.embebidas} nota(s) embebida(s) · ${r.total} en el índice`);
       }
     } catch (e) {
-      console.log(`[diario-nocturno] rag desactivado: ${e instanceof Error ? e.message : String(e)}`);
+      console.log(`[nightly-journal] rag desactivado: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
@@ -132,7 +139,10 @@ export default class DiarioPlugin extends Plugin {
     const hoja = workspace.getLeaf(true);
     await hoja.setViewState({ type: TIPO_VISTA_DIARIO, active: true });
     workspace.revealLeaf(hoja);
-    if (this.rutaVault() === null) new Notice('Diario Nocturno solo funciona en escritorio.');
+    if (this.rutaVault() === null)
+      new Notice(
+        this.idioma() === 'en' ? 'Nightly Journal only works on desktop.' : 'Nightly Journal solo funciona en escritorio.'
+      );
   }
 
   // ── ajustes ───────────────────────────────────────────────────

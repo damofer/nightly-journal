@@ -11,7 +11,7 @@ import esbuild from 'esbuild';
 
 const prod = process.argv.includes('production');
 const vault = process.env.OBSIDIAN_TEST_VAULT;
-const outfile = !prod && vault ? `${vault}/.obsidian/plugins/diario-nocturno/main.js` : 'main.js';
+const outfile = !prod && vault ? `${vault}/.obsidian/plugins/nightly-journal/main.js` : 'main.js';
 
 const ctx = await esbuild.context({
   entryPoints: ['src/main.ts'],
