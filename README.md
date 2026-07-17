@@ -8,7 +8,7 @@
 
 **Una IA local te entrevista al final del día y escribe tu diario por ti — 100% local con [Ollama](https://ollama.com).**
 
-![Nightly Journal running inside Obsidian: the interview, the confirmable writing plan and the saved notes](screenshot.png)
+![Nightly Journal in action: hands-free interview, attachments, the confirmable plan and the notes appearing in the graph](whole.gif)
 
 [English](#english) · [Español](#español)
 
@@ -21,6 +21,24 @@
 Chat for two minutes at the end of your day. The plugin interviews you with short, warm follow-up questions; when you close the day it shows a **writing plan** — item by item, with checkboxes — and only after you confirm does it write to your vault: a daily note with mood and energy, plus person and project notes connected with wikilinks.
 
 No cloud, no accounts, no telemetry: the model runs on your machine.
+
+### See it in action
+
+**Hands-free** — just talk: it detects your pause, sends by itself and answers out loud.
+
+![Hands-free voice interview](handsfree.gif)
+
+**Attach documents** — a PDF becomes part of the conversation (and of your memory).
+
+![Attaching a PDF to the conversation](files.gif)
+
+**Close the day** — review the plan, confirm, and watch the notes appear in your graph.
+
+![Confirming the writing plan and the new notes appearing in the graph](notes.gif)
+
+**Ask your journal** — it answers only from your notes, citing dates, with clickable sources.
+
+![Asking the journal a question and getting an answer with sources](rag.gif)
 
 ### Features
 
@@ -102,6 +120,24 @@ npm run build --prefix apps/obsidian    # typecheck + bundle → apps/obsidian/m
 Charla dos minutos al final de tu día. El plugin te entrevista con preguntas cortas y cálidas; al cerrar el día te muestra un **plan de escritura** — ítem por ítem, con casillas — y solo cuando confirmas escribe en tu vault: la nota diaria con ánimo y energía, más notas de personas y proyectos conectadas con wikilinks.
 
 Sin nube, sin cuentas, sin telemetría: el modelo corre en tu máquina.
+
+### Míralo en acción
+
+**Manos libres** — solo habla: detecta tu pausa, envía solo y te responde en voz alta.
+
+![Entrevista de voz manos libres](handsfree.gif)
+
+**Adjunta documentos** — un PDF pasa a ser parte de la conversación (y de tu memoria).
+
+![Adjuntando un PDF a la conversación](files.gif)
+
+**Cierra el día** — revisa el plan, confirma y mira las notas aparecer en tu grafo.
+
+![Confirmando el plan de escritura y las notas nuevas apareciendo en el grafo](notes.gif)
+
+**Pregúntale a tu diario** — responde solo con tus notas, citando fechas, con fuentes clicables.
+
+![Preguntándole al diario y recibiendo respuesta con fuentes](rag.gif)
 
 ### Funciones
 
