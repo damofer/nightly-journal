@@ -8,9 +8,7 @@
 
 **Una IA local te entrevista al final del día y escribe tu diario por ti — 100% local con [Ollama](https://ollama.com).**
 
-[![Watch the video](whole.gif)](https://youtu.be/YU2AYiabJq4)
-
-**[▶ Watch the full demo on YouTube](https://youtu.be/YU2AYiabJq4)**
+[![Watch the demo on YouTube](youtube-player.jpg)](https://youtu.be/YU2AYiabJq4)
 
 [English](#english) · [Español](#español)
 
