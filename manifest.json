@@ -1,7 +1,7 @@
 {
   "id": "nightly-journal",
   "name": "Nightly Journal",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "minAppVersion": "1.8.7",
   "description": "A local AI interviews you at the end of your day and writes your journal for you: daily notes, people and projects, a confirmable writing plan, and a long-term memory you can ask questions. 100% local via Ollama, in English or Spanish.",
   "author": "damofer",

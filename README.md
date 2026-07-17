@@ -48,7 +48,7 @@ Optional, recommended:
 
 | Model | Enables |
 | --- | --- |
-| `ollama pull embeddinggemma` | long-term memory + the *ask your journal* tab |
+| `embeddinggemma` — the plugin downloads it automatically | long-term memory + the *ask your journal* tab |
 | `ollama pull gemma3:12b` | higher-quality extraction (set as *extraction model* in settings) |
 
 If Ollama or a model is missing, the plugin shows a friendly first-run card — not an error. From that card you can download the recommended model with one click (no terminal needed) or pick any model you already have installed in Ollama.
@@ -129,7 +129,7 @@ Opcional, recomendado:
 
 | Modelo | Habilita |
 | --- | --- |
-| `ollama pull embeddinggemma` | memoria de largo plazo + la pestaña *consultar* |
+| `embeddinggemma` — el plugin lo descarga automáticamente | memoria de largo plazo + la pestaña *consultar* |
 | `ollama pull gemma3:12b` | extracción de más calidad (ponlo como *modelo de extracción* en los ajustes) |
 
 Si falta Ollama o un modelo, el plugin muestra una tarjeta de primer arranque — no un error. Desde esa tarjeta puedes descargar el modelo recomendado con un click (sin terminal) o elegir cualquier modelo que ya tengas instalado en Ollama.

@@ -10,7 +10,7 @@ import type { Config } from '../../diario/src/config.js';
 import type { Idioma } from '../../diario/src/idioma.js';
 import { AJUSTES_DEFECTO, idiomaDeObsidian, PestanaAjustes, type AjustesDiario } from './ajustes.js';
 import { refrescarScriptGestionado } from './instalador_voz.js';
-import { transporteRequestUrl } from './transporte.js';
+import { descargarModelo, estadoOllama, transporteRequestUrl } from './transporte.js';
 import { ClienteVoz } from './voz.js';
 import { TIPO_VISTA_DIARIO, VistaDiario } from './vista.js';
 
@@ -21,6 +21,7 @@ export default class DiarioPlugin extends Plugin {
   sesion: SesionDiario | null = null;
   rag: Rag | null = null;
   private clienteVoz: ClienteVoz | null = null;
+  private descargandoEmbed = false;
 
   async onload(): Promise<void> {
     await this.cargarAjustes();
@@ -120,11 +121,37 @@ export default class DiarioPlugin extends Plugin {
   async refrescarRag(): Promise<void> {
     if (!this.ajustes.modeloEmbed) return;
     try {
+      await this.asegurarModeloEmbed();
+      // una instancia que se auto-desactivó (el modelo aún no estaba) se
+      // recrea: el constructor solo carga el índice de disco, es barato
+      if (this.rag && !this.rag.activo) this.rag = null;
       this.rag ??= new Rag(this.configActual().vault, this.configActual());
       await this.rag.reindexar();
     } catch {
       // sin vault de escritorio o config rota: la pestaña de consulta ya
       // muestra "sin memoria" y la vista comunica el problema de arranque
+    }
+  }
+
+  // El modelo de memoria se descarga solo (una vez, ~600 MB): pedirle al
+  // usuario final un "ollama pull" manual mata la memoria de largo plazo.
+  private async asegurarModeloEmbed(): Promise<void> {
+    const { ollamaUrl, modeloEmbed } = this.ajustes;
+    if (this.descargandoEmbed) return;
+    const st = await estadoOllama(ollamaUrl, modeloEmbed);
+    if (!st.ollama || st.modeloOk) return; // sin Ollama no hay qué hacer; con modelo, tampoco
+    this.descargandoEmbed = true;
+    const en = this.idioma() === 'en';
+    new Notice(
+      en
+        ? `Downloading the memory model (${modeloEmbed}, one time)…`
+        : `Descargando el modelo de memoria (${modeloEmbed}, una sola vez)…`
+    );
+    try {
+      const r = await descargarModelo(ollamaUrl, modeloEmbed);
+      if (r.ok) new Notice(en ? 'Long-term memory ready ✓' : 'Memoria de largo plazo lista ✓');
+    } finally {
+      this.descargandoEmbed = false;
     }
   }
 
