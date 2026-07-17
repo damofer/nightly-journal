@@ -8,7 +8,9 @@
 
 **Una IA local te entrevista al final del día y escribe tu diario por ti — 100% local con [Ollama](https://ollama.com).**
 
-![Nightly Journal in action: hands-free interview, attachments, the confirmable plan and the notes appearing in the graph](whole.gif)
+[![Watch the video](whole.gif)](https://youtu.be/YU2AYiabJq4)
+
+**[▶ Watch the full demo on YouTube](https://youtu.be/YU2AYiabJq4)**
 
 [English](#english) · [Español](#español)
 
