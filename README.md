@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" alt="Nightly Journal" width="140">
+  <img src="https://raw.githubusercontent.com/damofer/nightly-journal/main/logo.png" alt="Nightly Journal" width="140">
 </p>
 
 # Nightly Journal
@@ -8,7 +8,9 @@
 
 **Una IA local te entrevista al final del día y escribe tu diario por ti — 100% local con [Ollama](https://ollama.com).**
 
-[![Watch the demo on YouTube](youtube-player.jpg)](https://youtu.be/YU2AYiabJq4)
+[![Watch the demo on YouTube](https://raw.githubusercontent.com/damofer/nightly-journal/main/youtube-player.jpg)](https://youtu.be/YU2AYiabJq4)
+
+**[▶ Watch the 4-minute demo on YouTube · Mira la demo de 4 minutos](https://youtu.be/YU2AYiabJq4)**
 
 [English](#english) · [Español](#español)
 
@@ -26,19 +28,19 @@ No cloud, no accounts, no telemetry: the model runs on your machine.
 
 **Hands-free** — just talk: it detects your pause, sends by itself and answers out loud.
 
-![Hands-free voice interview](handsfree.gif)
+![Hands-free voice interview](https://raw.githubusercontent.com/damofer/nightly-journal/main/handsfree.gif)
 
 **Attach documents** — a PDF becomes part of the conversation (and of your memory).
 
-![Attaching a PDF to the conversation](files.gif)
+![Attaching a PDF to the conversation](https://raw.githubusercontent.com/damofer/nightly-journal/main/files.gif)
 
 **Close the day** — review the plan, confirm, and watch the notes appear in your graph.
 
-![Confirming the writing plan and the new notes appearing in the graph](notes.gif)
+![Confirming the writing plan and the new notes appearing in the graph](https://raw.githubusercontent.com/damofer/nightly-journal/main/notes.gif)
 
 **Ask your journal** — it answers only from your notes, citing dates, with clickable sources.
 
-![Asking the journal a question and getting an answer with sources](rag.gif)
+![Asking the journal a question and getting an answer with sources](https://raw.githubusercontent.com/damofer/nightly-journal/main/rag.gif)
 
 ### Features
 
@@ -125,19 +127,19 @@ Sin nube, sin cuentas, sin telemetría: el modelo corre en tu máquina.
 
 **Manos libres** — solo habla: detecta tu pausa, envía solo y te responde en voz alta.
 
-![Entrevista de voz manos libres](handsfree.gif)
+![Entrevista de voz manos libres](https://raw.githubusercontent.com/damofer/nightly-journal/main/handsfree.gif)
 
 **Adjunta documentos** — un PDF pasa a ser parte de la conversación (y de tu memoria).
 
-![Adjuntando un PDF a la conversación](files.gif)
+![Adjuntando un PDF a la conversación](https://raw.githubusercontent.com/damofer/nightly-journal/main/files.gif)
 
 **Cierra el día** — revisa el plan, confirma y mira las notas aparecer en tu grafo.
 
-![Confirmando el plan de escritura y las notas nuevas apareciendo en el grafo](notes.gif)
+![Confirmando el plan de escritura y las notas nuevas apareciendo en el grafo](https://raw.githubusercontent.com/damofer/nightly-journal/main/notes.gif)
 
 **Pregúntale a tu diario** — responde solo con tus notas, citando fechas, con fuentes clicables.
 
-![Preguntándole al diario y recibiendo respuesta con fuentes](rag.gif)
+![Preguntándole al diario y recibiendo respuesta con fuentes](https://raw.githubusercontent.com/damofer/nightly-journal/main/rag.gif)
 
 ### Funciones
 
