@@ -196,25 +196,48 @@ export class Rag {
   // produce fallos TRANSITORIOS de embeddings; un reintento con espera los
   // absorbe — apagar la memoria entera por uno solo era demasiado (medido:
   // "memory off" intermitente conviviendo con bonsai-27b).
-  private async embedRobusto(textos: string[]): Promise<number[][]> {
+  private colaEmbed: Promise<unknown> = Promise.resolve();
+
+  // Serializa los embeds de la instancia: reindexar (en segundo plano) y
+  // buscar (la pregunta del usuario) corrían tandas concurrentes y sus
+  // remediaciones se descargaban el runner mutuamente — ciclo de respawns
+  // visto en server.log de Ollama.
+  private embedRobusto(textos: string[]): Promise<number[][]> {
+    const tarea = this.colaEmbed.then(() => this.embedConReintentos(textos));
+    this.colaEmbed = tarea.then(
+      () => {},
+      () => {}
+    );
+    return tarea;
+  }
+
+  private async embedConReintentos(textos: string[]): Promise<number[][]> {
+    const espera = () => new Promise(listo => setTimeout(listo, ESPERA_REINTENTO_MS));
     try {
       return await this.embed(textos);
     } catch {
-      // Ollama puede quedarse enrutando a un runner MUERTO (desalojado de la
-      // VRAM por un modelo grande): todo embed da 400 "connection refused"
-      // hasta que el runner expire. keep_alive:0 lo desregistra ya, y el
-      // reintento arranca uno fresco. Best-effort: si esto falla, da igual.
+      // 1er reintento SIN tocar nada: lo más común es perder la carrera del
+      // scheduler contra un runner recién desalojado (Ollama entrega la ref
+      // muerta y devuelve 400) — el runner nuevo ya viene subiendo solo.
+      await espera();
       try {
-        await postJson(
-          `${this.cfg.ollamaUrl}/api/generate`,
-          { model: this.cfg.modeloEmbed, keep_alive: 0 },
-          { timeoutMs: 20000 }
-        );
+        return await this.embed(textos);
       } catch {
-        // sin Ollama no hay nada que desatascar; el reintento decidirá
+        // 2º fallo: runner zombi de verdad. keep_alive:0 lo desregistra
+        // (probado: done_reason "unload" incluso en modelos solo-embeddings)
+        // y el tercer intento arranca uno fresco. Best-effort.
+        try {
+          await postJson(
+            `${this.cfg.ollamaUrl}/api/generate`,
+            { model: this.cfg.modeloEmbed, keep_alive: 0 },
+            { timeoutMs: 20000 }
+          );
+        } catch {
+          // sin Ollama no hay nada que desatascar; el reintento decidirá
+        }
+        await espera();
+        return this.embed(textos);
       }
-      await new Promise(listo => setTimeout(listo, ESPERA_REINTENTO_MS));
-      return this.embed(textos);
     }
   }
 

@@ -118,7 +118,20 @@ export default class DiarioPlugin extends Plugin {
 
   // ── memoria de largo plazo ────────────────────────────────────
 
-  async refrescarRag(): Promise<void> {
+  // Un solo refresco a la vez: onLayoutReady, el self-heal de la pestaña
+  // consultar y el healing de enviar podían disparar reindexados
+  // concurrentes sobre instancias DISTINTAS de Rag (embeds en paralelo
+  // que se tumbaban el runner de Ollama entre sí).
+  private ragRefrescando: Promise<void> | null = null;
+
+  refrescarRag(): Promise<void> {
+    this.ragRefrescando ??= this.refrescarRagAhora().finally(() => {
+      this.ragRefrescando = null;
+    });
+    return this.ragRefrescando;
+  }
+
+  private async refrescarRagAhora(): Promise<void> {
     if (!this.ajustes.modeloEmbed) return;
     try {
       await this.asegurarModeloEmbed();
