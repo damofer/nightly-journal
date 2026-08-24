@@ -248,7 +248,10 @@ export class SesionDiario {
       // 0.27: calibrado para que frases cortas ("me duele la boca" → 0.289
       // contra la nota del dentista) sí disparen; el ruido medido queda <0.23
       const opciones = { k: 3, min: 0.27, excluir: new RegExp(this.fecha) };
-      let recuerdos = await this.rag.buscar(texto, opciones);
+      // buscar LANZA si los embeddings fallan (para que la pestaña consultar
+      // no mienta con "no tengo eso registrado"); aquí se traga: la
+      // entrevista tiene que seguir aunque hoy no haya memoria
+      let recuerdos = await this.rag.buscar(texto, opciones).catch(() => []);
       if (texto.trim().length < 60) {
         // respuesta corta ("sí", "¿cuándo me la sacan?"): el tema vive en la
         // pregunta anterior — busca también con ese contexto y fusiona
@@ -257,7 +260,7 @@ export class SesionDiario {
         // puerta de confianza)
         const preguntaPrevia = [...this.mensajes].reverse().find(m => m.role === 'assistant')?.content;
         if (preguntaPrevia) {
-          const extras = await this.rag.buscar(`${preguntaPrevia}\n${texto}`, opciones);
+          const extras = await this.rag.buscar(`${preguntaPrevia}\n${texto}`, opciones).catch(() => []);
           const porClave = new Map(recuerdos.map(r => [`${r.ruta}#${r.seccion}#${r.texto}`, r]));
           for (const r of extras) {
             const clave = `${r.ruta}#${r.seccion}#${r.texto}`;

@@ -720,7 +720,12 @@ export class VistaDiario extends ItemView {
       this.hablar(respuesta);
     } catch (e) {
       this.quitarIndicador();
-      this.burbuja('error', e instanceof Error ? e.message : String(e), this.consultaChatEl);
+      const detalle = e instanceof Error ? e.message : String(e);
+      // el fallo de embeddings es transitorio y tiene explicación humana;
+      // el resto se muestra crudo porque suele ser config o red
+      const esEmbed = /^embed /.test(detalle);
+      if (esEmbed) this.burbuja('sistema', t.consultaMemoriaOcupada, this.consultaChatEl);
+      else this.burbuja('error', detalle, this.consultaChatEl);
     } finally {
       this.consultando = false;
       if (this.modo === 'consultar') {

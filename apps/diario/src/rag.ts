@@ -119,9 +119,14 @@ const prefijoConsulta = (texto: string) => `task: search result | query: ${texto
 
 function embedOllama(cfg: Config): FnEmbed {
   return async textos => {
+    // keep_alive largo: el modelo de embeddings pesa ~640 MB y su carga EN
+    // FRÍO es lo que dura 5-10 s (medido: caliente embebe 80 trozos en
+    // 0.77 s) — y esa ventana de carga es justo cuando el modelo de chat
+    // desaloja al de embeddings y la petición muere. Manteniéndolo residente
+    // esa ventana casi no existe.
     const res = await postJson(
       `${cfg.ollamaUrl}/api/embed`,
-      { model: cfg.modeloEmbed, input: textos },
+      { model: cfg.modeloEmbed, input: textos, keep_alive: '30m' },
       { timeoutMs: 120000 }
     );
     if (res.status < 200 || res.status >= 300) throw new Error(`embed ${res.status}: ${res.texto}`);
@@ -170,6 +175,17 @@ function listarNotas(vault: string): string[] {
   }
   return rutas;
 }
+
+// Tandas pequeñas de embeddings: no por velocidad (con el modelo caliente 80
+// trozos van en 0.77 s) sino por RADIO DE DAÑO — si un desalojo mata la
+// petición, se pierden 8 trozos y no una nota entera de decenas.
+const LOTE_EMBED = 8;
+
+// Solo el modelo AUSENTE (404 "not found") apaga la memoria: eso lo arregla
+// el plugin descargándolo. Un 400 por desalojo de VRAM es transitorio y NO
+// debe tumbar nada — medido: la búsqueda contesta en 75 ms con el índice de
+// disco mientras el reindexado en fondo fallaba.
+const esModeloAusente = (mensaje: string) => /404|not found|try pulling/i.test(mensaje);
 
 // Exportada solo para que los tests no esperen 4 segundos reales.
 export let ESPERA_REINTENTO_MS = 4000;
@@ -262,7 +278,11 @@ export class Rag {
           this.indice.notas[ruta] = { hash, chunks: [] };
           continue;
         }
-        const vectores = await this.embedRobusto(trozos.map(t => prefijoDoc(nombre, t.texto)));
+        const entradas = trozos.map(t => prefijoDoc(nombre, t.texto));
+        const vectores: number[][] = [];
+        for (let i = 0; i < entradas.length; i += LOTE_EMBED) {
+          vectores.push(...(await this.embedRobusto(entradas.slice(i, i + LOTE_EMBED))));
+        }
         this.indice.notas[ruta] = {
           hash,
           chunks: trozos.map((t, i) => ({ seccion: t.seccion, texto: t.texto, vector: vectores[i] ?? [] })),
@@ -276,8 +296,8 @@ export class Rag {
       mkdirSync(join(this.vault, '.indice'), { recursive: true });
       writeFileSync(rutaIndiceRag(this.vault), JSON.stringify(this.indice), 'utf8');
     } catch (e) {
-      this.activo = false;
       this.ultimoError = e instanceof Error ? e.message : String(e);
+      if (esModeloAusente(this.ultimoError)) this.activo = false;
       // lo ya embebido se guarda: la próxima pasada retoma donde quedó
       try {
         mkdirSync(join(this.vault, '.indice'), { recursive: true });
@@ -294,8 +314,19 @@ export class Rag {
     // umbral calibrado con embeddinggemma sobre el vault real: lo relevante
     // puntúa ~0.3-0.6 con chunks por párrafo; el ruido queda por debajo de ~0.2
     const { k = 3, min = 0.28, excluir } = opciones ?? {};
-    try {
-      const [vector] = await this.embedRobusto([prefijoConsulta(consulta)]);
+    {
+      // Si el embed falla, LANZA en vez de devolver vacío: el [] silencioso
+      // hacía que el diario contestara "no tengo eso registrado" — mentir
+      // sobre lo que recuerda es peor que avisar de que ahora no puede
+      // consultarlo. La entrevista lo captura por su cuenta y sigue.
+      let vector: number[];
+      try {
+        [vector] = await this.embedRobusto([prefijoConsulta(consulta)]);
+      } catch (e) {
+        this.ultimoError = e instanceof Error ? e.message : String(e);
+        if (esModeloAusente(this.ultimoError)) this.activo = false;
+        throw e;
+      }
       const resultados: ResultadoRag[] = [];
       for (const [ruta, nota] of Object.entries(this.indice.notas)) {
         if (excluir?.test(ruta)) continue;
@@ -305,8 +336,6 @@ export class Rag {
         }
       }
       return resultados.sort((a, b) => b.score - a.score).slice(0, k);
-    } catch {
-      return []; // la búsqueda jamás rompe la entrevista
     }
   }
 

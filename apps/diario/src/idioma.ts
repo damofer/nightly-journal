@@ -210,6 +210,7 @@ export interface TextosUi {
   consultaPlaceholder: string;
   consultaIntro: string;
   consultaSinMemoria: string;
+  consultaMemoriaOcupada: string;
   consultaFuentes: string;
 }
 
@@ -276,6 +277,7 @@ export const TEXTOS_UI: Record<Idioma, TextosUi> = {
     consultaPlaceholder: 'pregúntale a tu memoria…',
     consultaIntro: 'Pregúntame por lo que has escrito: personas, proyectos, lo que contaste hace semanas… Respondo solo con tus notas, citando la fecha.',
     consultaSinMemoria: 'La memoria de largo plazo está desactivada. Configura el modelo de embeddings en los ajustes (una vez: ollama pull embeddinggemma).',
+    consultaMemoriaOcupada: 'No pude consultar tu memoria ahora mismo: Ollama estaba ocupado cargando otro modelo. Vuelve a preguntar en unos segundos.',
     consultaFuentes: 'fuentes:',
   },
   en: {
@@ -340,6 +342,7 @@ export const TEXTOS_UI: Record<Idioma, TextosUi> = {
     consultaPlaceholder: 'ask your memory…',
     consultaIntro: "Ask me about what you've written: people, projects, things you told me weeks ago… I answer only from your notes, citing the date.",
     consultaSinMemoria: 'Long-term memory is off. Set the embeddings model in settings (once: ollama pull embeddinggemma).',
+    consultaMemoriaOcupada: "I couldn't reach your memory right now: Ollama was busy loading another model. Ask again in a few seconds.",
     consultaFuentes: 'sources:',
   },
 };
