@@ -182,6 +182,14 @@ export class Rag {
   private embed: FnEmbed;
   activo = true; // se apaga solo si el modelo de embeddings no está
   ultimoError: string | null = null; // por qué se apagó (el caller decide si lo muestra)
+  private cancelado = false;
+
+  // La instancia abandonada (el plugin la recrea al curarse o al cambiar
+  // ajustes) debe SOLTAR Ollama: su reindexado fantasma seguía embebiendo
+  // en fondo y competía con la instancia nueva.
+  cancelar(): void {
+    this.cancelado = true;
+  }
 
   constructor(
     private vault: string,
@@ -211,32 +219,24 @@ export class Rag {
     return tarea;
   }
 
+  // Reintentos PLANOS con espera creciente — sin keep_alive:0: descargar el
+  // modelo mataba a mitad de batch los embeds de cualquier otra instancia
+  // (otra ventana de Obsidian, un reindexado en fondo) y el ciclo de fuego
+  // amigo tumbaba el runner cada pocos segundos. El server.log demostró que
+  // Ollama respawnea el runner solo con cada petición nueva: reintentar y
+  // esperar basta (hubo 400→200 en 54 ms sin descargar nada).
   private async embedConReintentos(textos: string[]): Promise<number[][]> {
-    const espera = () => new Promise(listo => setTimeout(listo, ESPERA_REINTENTO_MS));
-    try {
-      return await this.embed(textos);
-    } catch {
-      // 1er reintento SIN tocar nada: lo más común es perder la carrera del
-      // scheduler contra un runner recién desalojado (Ollama entrega la ref
-      // muerta y devuelve 400) — el runner nuevo ya viene subiendo solo.
-      await espera();
+    const espera = (ms: number) => new Promise(listo => setTimeout(listo, ms));
+    for (let intento = 0; ; intento++) {
+      if (this.cancelado) throw new Error('índice reemplazado');
       try {
         return await this.embed(textos);
-      } catch {
-        // 2º fallo: runner zombi de verdad. keep_alive:0 lo desregistra
-        // (probado: done_reason "unload" incluso en modelos solo-embeddings)
-        // y el tercer intento arranca uno fresco. Best-effort.
-        try {
-          await postJson(
-            `${this.cfg.ollamaUrl}/api/generate`,
-            { model: this.cfg.modeloEmbed, keep_alive: 0 },
-            { timeoutMs: 20000 }
-          );
-        } catch {
-          // sin Ollama no hay nada que desatascar; el reintento decidirá
-        }
-        await espera();
-        return this.embed(textos);
+      } catch (e) {
+        if (intento >= 2) throw e;
+        // lo más común es perder la carrera del scheduler contra un runner
+        // recién desalojado (Ollama entrega la ref muerta y devuelve 400) —
+        // el runner nuevo ya viene subiendo solo
+        await espera(ESPERA_REINTENTO_MS * (intento + 1));
       }
     }
   }
@@ -249,6 +249,7 @@ export class Rag {
     let embebidas = 0;
     try {
       for (const rutaAbs of listarNotas(this.vault)) {
+        if (this.cancelado) return { embebidas, total: vivas.size };
         const ruta = relative(this.vault, rutaAbs).replace(/\\/g, '/');
         vivas.add(ruta);
         const contenido = readFileSync(rutaAbs, 'utf8');

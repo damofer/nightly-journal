@@ -137,7 +137,10 @@ export default class DiarioPlugin extends Plugin {
       await this.asegurarModeloEmbed();
       // una instancia que se auto-desactivó (el modelo aún no estaba) se
       // recrea: el constructor solo carga el índice de disco, es barato
-      if (this.rag && !this.rag.activo) this.rag = null;
+      if (this.rag && !this.rag.activo) {
+        this.rag.cancelar(); // suelta cualquier reindexado fantasma en vuelo
+        this.rag = null;
+      }
       this.rag ??= new Rag(this.configActual().vault, this.configActual());
       await this.rag.reindexar();
     } catch {
@@ -196,6 +199,7 @@ export default class DiarioPlugin extends Plugin {
 
   async guardarAjustes(): Promise<void> {
     await this.saveData(this.ajustes);
+    this.rag?.cancelar(); // suelta cualquier reindexado fantasma en vuelo
     this.rag = null; // config pudo cambiar (ollamaUrl/modeloEmbed): se recrea
     this.clienteVoz = null; // ídem para la voz (sin matar un sidecar externo)
   }
