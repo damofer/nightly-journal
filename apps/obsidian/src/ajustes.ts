@@ -50,10 +50,44 @@ export const AJUSTES_DEFECTO: AjustesDiario = {
   vozCwd: '',
 };
 
+// Catálogo que el plugin ofrece sin escribir nombres a mano (tarjeta de
+// primer arranque y ajustes). Cada entrada trae SU modelo de extracción:
+// Bonsai (27B a 1 bit) conversa muy bien pero la cuantización de 1 bit
+// degrada la salida estructurada, así que su extracción queda en gemma3:4b.
+export interface ModeloRecomendado {
+  modelo: string;
+  extractor: string;
+  nota: { es: string; en: string };
+}
+
+export const MODELOS_RECOMENDADOS: ModeloRecomendado[] = [
+  {
+    modelo: 'gemma3:4b',
+    extractor: 'gemma3:4b',
+    nota: { es: 'recomendado · 3.3 GB', en: 'recommended · 3.3 GB' },
+  },
+  {
+    modelo: 'gemma3:12b',
+    extractor: 'gemma3:12b',
+    nota: { es: 'más calidad · 8.1 GB · pide ~12 GB de RAM', en: 'higher quality · 8.1 GB · needs ~12 GB RAM' },
+  },
+  {
+    modelo: 'MichelRosselli/bonsai-27b:Q1_0',
+    extractor: 'gemma3:4b',
+    nota: {
+      es: 'experimental · 27B en 4.4 GB · mejor conversación · pide Ollama 0.32.5+',
+      en: 'experimental · 27B in 4.4 GB · better conversation · needs Ollama 0.32.5+',
+    },
+  },
+];
+
 const ETIQUETAS = {
   es: {
     ollamaUrl: 'URL de Ollama',
     ollamaUrlDesc: 'Dónde corre Ollama (por defecto http://localhost:11434).',
+    modeloCatalogo: 'Modelos recomendados',
+    modeloCatalogoDesc: 'Elegir uno rellena el modelo de entrevista y el de extracción. Si aún no está descargado, la tarjeta de inicio lo baja con un click.',
+    modeloCatalogoElegir: 'elige un modelo…',
     modelo: 'Modelo de entrevista',
     modeloDesc: 'Rápido y conversacional (ej. gemma3:4b).',
     modeloExtractor: 'Modelo de extracción',
@@ -83,6 +117,9 @@ const ETIQUETAS = {
   en: {
     ollamaUrl: 'Ollama URL',
     ollamaUrlDesc: 'Where Ollama runs (default http://localhost:11434).',
+    modeloCatalogo: 'Recommended models',
+    modeloCatalogoDesc: 'Picking one fills in both the interview and extraction models. If it is not downloaded yet, the first-run card downloads it in one click.',
+    modeloCatalogoElegir: 'pick a model…',
     modelo: 'Interview model',
     modeloDesc: 'Fast and conversational (e.g. gemma3:4b).',
     modeloExtractor: 'Extraction model',
@@ -151,6 +188,23 @@ export class PestanaAjustes extends PluginSettingTab {
           await this.plugin.guardarAjustes();
         })
       );
+
+    new Setting(containerEl)
+      .setName(t.modeloCatalogo)
+      .setDesc(t.modeloCatalogoDesc)
+      .addDropdown(d => {
+        d.addOption('', t.modeloCatalogoElegir);
+        for (const r of MODELOS_RECOMENDADOS) d.addOption(r.modelo, `${r.modelo} — ${r.nota[this.plugin.idioma()]}`);
+        d.setValue(MODELOS_RECOMENDADOS.some(r => r.modelo === a.modelo) ? a.modelo : '');
+        d.onChange(async valor => {
+          const r = MODELOS_RECOMENDADOS.find(x => x.modelo === valor);
+          if (!r) return;
+          a.modelo = r.modelo;
+          a.modeloExtractor = r.extractor;
+          await this.plugin.guardarAjustes();
+          this.display(); // refleja los dos campos de abajo
+        });
+      });
 
     new Setting(containerEl)
       .setName(t.modelo)

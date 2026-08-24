@@ -71,7 +71,7 @@ Optional, recommended:
 | `embeddinggemma` — the plugin downloads it automatically | long-term memory + the *ask your journal* tab |
 | `ollama pull gemma3:12b` | higher-quality extraction (set as *extraction model* in settings) |
 
-If Ollama or a model is missing, the plugin shows a friendly first-run card — not an error. From that card you can download the recommended model with one click (no terminal needed) or pick any model you already have installed in Ollama.
+If Ollama or a model is missing, the plugin shows a friendly first-run card — not an error. From that card you can choose between the recommended models — `gemma3:4b` (default), `gemma3:12b` (higher quality) or the experimental `bonsai-27b` (27B compressed to 4.4 GB, great at conversation; needs Ollama 0.32.5+) — and download your pick with one click (no terminal), or use any model you already have installed in Ollama.
 
 ### How to use
 
@@ -170,7 +170,7 @@ Opcional, recomendado:
 | `embeddinggemma` — el plugin lo descarga automáticamente | memoria de largo plazo + la pestaña *consultar* |
 | `ollama pull gemma3:12b` | extracción de más calidad (ponlo como *modelo de extracción* en los ajustes) |
 
-Si falta Ollama o un modelo, el plugin muestra una tarjeta de primer arranque — no un error. Desde esa tarjeta puedes descargar el modelo recomendado con un click (sin terminal) o elegir cualquier modelo que ya tengas instalado en Ollama.
+Si falta Ollama o un modelo, el plugin muestra una tarjeta de primer arranque — no un error. Desde esa tarjeta puedes elegir entre los modelos recomendados — `gemma3:4b` (por defecto), `gemma3:12b` (más calidad) o el experimental `bonsai-27b` (27B comprimido a 4.4 GB, gran conversador; pide Ollama 0.32.5+) — y descargar el elegido con un click (sin terminal), o usar cualquier modelo que ya tengas instalado en Ollama.
 
 ### Cómo se usa
 

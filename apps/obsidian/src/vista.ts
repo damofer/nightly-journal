@@ -13,6 +13,7 @@ import { ConsultaDiario } from '../../diario/src/consulta.js';
 import type { ResultadoRag } from '../../diario/src/rag.js';
 import type { ItemPlan } from '../../diario/src/aplicador.js';
 import { descargarModelo, estadoOllama, listarModelos } from './transporte.js';
+import { MODELOS_RECOMENDADOS } from './ajustes.js';
 import { AsistenteVoz } from './instalador_voz.js';
 import type { SaludVoz, VozKokoro } from './voz.js';
 import type DiarioPlugin from './main.js';
@@ -737,8 +738,15 @@ export class VistaDiario extends ItemView {
       const enlace = acciones.createEl('a', { href: 'https://ollama.com/download' });
       enlace.createEl('button', { cls: 'diario-boton diario-primario', text: t.estadoDescargarOllama });
     } else if (!st.modeloOk) {
-      tarjeta.createDiv({ cls: 'diario-tarjeta-texto', text: plantilla(t.estadoSinModelo, { modelo }) });
+      const texto = tarjeta.createDiv({ cls: 'diario-tarjeta-texto', text: plantilla(t.estadoSinModelo, { modelo }) });
       const estadoDescarga = tarjeta.createDiv({ cls: 'diario-tarjeta-texto' });
+      // catálogo de recomendados: elegir uno fija entrevista + extracción y
+      // cambia lo que el botón baja; si ya está instalado, arranca directo
+      const idioma = this.plugin.idioma();
+      const recomendados = acciones.createEl('select', { cls: 'dropdown' });
+      for (const r of MODELOS_RECOMENDADOS)
+        recomendados.createEl('option', { text: `${r.modelo} — ${r.nota[idioma]}`, value: r.modelo });
+      if (MODELOS_RECOMENDADOS.some(r => r.modelo === modelo)) recomendados.value = modelo;
       const descargar = acciones.createEl('button', { cls: 'diario-boton diario-primario', text: t.estadoBotonModelo });
       this.registerDomEvent(descargar, 'click', () => void this.descargarModeloYReintentar(descargar, estadoDescarga));
       // con otro modelo ya descargado no hace falta bajar nada: elegirlo
@@ -759,7 +767,19 @@ export class VistaDiario extends ItemView {
           })();
         });
       }
-      tarjeta.createEl('code', { cls: 'diario-codigo', text: `ollama pull ${modelo}` });
+      const codigo = tarjeta.createEl('code', { cls: 'diario-codigo', text: `ollama pull ${modelo}` });
+      this.registerDomEvent(recomendados, 'change', () => {
+        const r = MODELOS_RECOMENDADOS.find(x => x.modelo === recomendados.value);
+        if (!r) return;
+        void (async () => {
+          this.plugin.ajustes.modelo = r.modelo;
+          this.plugin.ajustes.modeloExtractor = r.extractor;
+          await this.plugin.guardarAjustes();
+          if ((await estadoOllama(ollamaUrl, r.modelo)).modeloOk) return this.iniciarSesion();
+          texto.setText(plantilla(t.estadoSinModelo, { modelo: r.modelo }));
+          codigo.setText(`ollama pull ${r.modelo}`);
+        })();
+      });
     } else {
       tarjeta.createDiv({ cls: 'diario-tarjeta-texto', text: `${t.errorIniciar}: ${mensajeError}` });
     }
@@ -776,10 +796,17 @@ export class VistaDiario extends ItemView {
   private async descargarModeloYReintentar(boton: HTMLButtonElement, estado: HTMLElement): Promise<void> {
     const t = this.t();
     const { ollamaUrl, modelo } = this.plugin.ajustes;
+    const { modeloExtractor } = this.plugin.ajustes;
     boton.disabled = true;
     estado.setText(t.estadoDescargando);
     let fallo: string | null = null;
-    void descargarModelo(ollamaUrl, modelo).then(r => {
+    // el extractor puede ser otro modelo (ej. Bonsai entrevista + gemma
+    // extrae): si también falta, se baja en la misma tanda
+    const pendientes = [modelo];
+    if (modeloExtractor && modeloExtractor !== modelo && !(await estadoOllama(ollamaUrl, modeloExtractor)).modeloOk)
+      pendientes.push(modeloExtractor);
+    for (const m of pendientes)
+      void descargarModelo(ollamaUrl, m).then(r => {
       if (!r.ok) fallo = r.error ?? 'error';
     });
     const inicio = Date.now();
@@ -788,8 +815,8 @@ export class VistaDiario extends ItemView {
       await espera(4000);
       // la vista se cerró o el usuario ya eligió otro modelo del selector
       if (this.cerrada || this.plugin.ajustes.modelo !== modelo) return;
-      const st = await estadoOllama(ollamaUrl, modelo);
-      if (st.modeloOk) {
+      const estados = await Promise.all(pendientes.map(m => estadoOllama(ollamaUrl, m)));
+      if (estados.every(s => s.modeloOk)) {
         await this.iniciarSesion();
         return;
       }
