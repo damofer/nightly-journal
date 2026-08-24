@@ -200,6 +200,19 @@ export class Rag {
     try {
       return await this.embed(textos);
     } catch {
+      // Ollama puede quedarse enrutando a un runner MUERTO (desalojado de la
+      // VRAM por un modelo grande): todo embed da 400 "connection refused"
+      // hasta que el runner expire. keep_alive:0 lo desregistra ya, y el
+      // reintento arranca uno fresco. Best-effort: si esto falla, da igual.
+      try {
+        await postJson(
+          `${this.cfg.ollamaUrl}/api/generate`,
+          { model: this.cfg.modeloEmbed, keep_alive: 0 },
+          { timeoutMs: 20000 }
+        );
+      } catch {
+        // sin Ollama no hay nada que desatascar; el reintento decidirá
+      }
       await new Promise(listo => setTimeout(listo, ESPERA_REINTENTO_MS));
       return this.embed(textos);
     }
