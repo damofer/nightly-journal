@@ -190,8 +190,29 @@
 
 .diario-tarjeta-acciones {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
+}
+
+.diario-tarjeta-acciones .dropdown {
+  max-width: 100%;
+}
+
+.diario-progreso {
+  height: 6px;
+  margin-top: 6px;
+  border-radius: 3px;
+  background: var(--background-modifier-border);
+  overflow: hidden;
+}
+
+.diario-progreso-barra {
+  height: 100%;
+  width: 0;
+  border-radius: 3px;
+  background: var(--interactive-accent);
+  transition: width 0.4s ease;
 }
 
 .diario-pie {

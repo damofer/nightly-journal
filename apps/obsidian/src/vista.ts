@@ -12,7 +12,7 @@ import { energiasRecientes, racha } from '../../diario/src/racha.js';
 import { ConsultaDiario } from '../../diario/src/consulta.js';
 import type { ResultadoRag } from '../../diario/src/rag.js';
 import type { ItemPlan } from '../../diario/src/aplicador.js';
-import { descargarModelo, estadoOllama, listarModelos } from './transporte.js';
+import { descargarModeloConProgreso, estadoOllama, listarModelos } from './transporte.js';
 import { MODELOS_RECOMENDADOS } from './ajustes.js';
 import { AsistenteVoz } from './instalador_voz.js';
 import type { SaludVoz, VozKokoro } from './voz.js';
@@ -63,6 +63,7 @@ export class VistaDiario extends ItemView {
   private tabRegistrar!: HTMLButtonElement;
   private tabConsultar!: HTMLButtonElement;
   private consulta: ConsultaDiario | null = null;
+  private ragConsulta: unknown = null; // instancia de Rag con la que se creó `consulta`
   private consultando = false;
 
   // ── estado de voz ──
@@ -614,23 +615,23 @@ export class VistaDiario extends ItemView {
   }
 
   private abrirConsulta(): void {
-    const rag = this.plugin.rag;
-    if (!rag?.activo) {
-      this.burbuja('sistema', this.t().consultaSinMemoria, this.consultaChatEl);
+    if (this.plugin.rag?.activo) {
+      this.burbuja('asistente', this.t().consultaIntro, this.consultaChatEl);
       return;
     }
-    this.burbuja('asistente', this.t().consultaIntro, this.consultaChatEl);
+    // sin memoria todavía: puede estar bajándose el modelo, o el índice se
+    // anuló al guardar ajustes — reintenta en segundo plano y avisa al llegar
+    this.burbuja('sistema', this.t().consultaSinMemoria, this.consultaChatEl);
+    void this.plugin.refrescarRag().then(() => {
+      if (!this.cerrada && this.plugin.rag?.activo)
+        this.burbuja('asistente', this.t().consultaIntro, this.consultaChatEl);
+    });
   }
 
   private async enviarConsulta(texto: string): Promise<void> {
     const limpio = texto.trim();
     if (!limpio || this.consultando) return;
     const t = this.t();
-    const rag = this.plugin.rag;
-    if (!rag?.activo) {
-      this.burbuja('sistema', t.consultaSinMemoria, this.consultaChatEl);
-      return;
-    }
     this.entradaEl.value = '';
     this.entradaEl.setCssStyles({ height: 'auto' });
     this.burbuja('usuario', limpio, this.consultaChatEl);
@@ -640,7 +641,21 @@ export class VistaDiario extends ItemView {
     this.btnMic.disabled = true;
     this.mostrarIndicador(t.pensando, this.consultaChatEl);
     try {
-      this.consulta ??= new ConsultaDiario(this.plugin.configActual(), rag);
+      // autocurable: la memoria puede faltar aún (el modelo bajándose, o el
+      // índice anulado al guardar ajustes) — se reintenta aquí mismo
+      if (!this.plugin.rag?.activo) await this.plugin.refrescarRag();
+      const rag = this.plugin.rag;
+      if (!rag?.activo) {
+        this.quitarIndicador();
+        this.burbuja('sistema', t.consultaSinMemoria, this.consultaChatEl);
+        return;
+      }
+      // el Rag pudo recrearse (otra instancia): la consulta memoizada
+      // quedaría apuntando al índice muerto
+      if (this.ragConsulta !== rag || !this.consulta) {
+        this.consulta = new ConsultaDiario(this.plugin.configActual(), rag);
+        this.ragConsulta = rag;
+      }
       const { respuesta, fuentes } = await this.consulta.preguntar(limpio);
       this.quitarIndicador();
       this.burbuja('asistente', respuesta, this.consultaChatEl);
@@ -798,7 +813,25 @@ export class VistaDiario extends ItemView {
     const { ollamaUrl, modelo } = this.plugin.ajustes;
     const { modeloExtractor } = this.plugin.ajustes;
     boton.disabled = true;
-    estado.setText(t.estadoDescargando);
+    estado.empty();
+    const textoEstado = estado.createDiv();
+    textoEstado.setText(t.estadoDescargando);
+    const barra = estado.createDiv({ cls: 'diario-progreso' }).createDiv({ cls: 'diario-progreso-barra' });
+    // progreso agregado de la tanda (pueden ser dos modelos)
+    const progreso = new Map<string, { hecho: number; total: number }>();
+    const gb = (n: number) => (n / 1024 ** 3).toFixed(1);
+    const pintar = () => {
+      let hecho = 0;
+      let total = 0;
+      for (const p of progreso.values()) {
+        hecho += p.hecho;
+        total += p.total;
+      }
+      if (!total) return;
+      const pct = Math.min(100, Math.floor((hecho / total) * 100));
+      barra.setCssStyles({ width: `${pct}%` });
+      textoEstado.setText(`${t.estadoDescargando} — ${pct}% · ${gb(hecho)} / ${gb(total)} GB`);
+    };
     let fallo: string | null = null;
     // el extractor puede ser otro modelo (ej. Bonsai entrevista + gemma
     // extrae): si también falta, se baja en la misma tanda
@@ -806,9 +839,12 @@ export class VistaDiario extends ItemView {
     if (modeloExtractor && modeloExtractor !== modelo && !(await estadoOllama(ollamaUrl, modeloExtractor)).modeloOk)
       pendientes.push(modeloExtractor);
     for (const m of pendientes)
-      void descargarModelo(ollamaUrl, m).then(r => {
-      if (!r.ok) fallo = r.error ?? 'error';
-    });
+      void descargarModeloConProgreso(ollamaUrl, m, (hecho, total) => {
+        progreso.set(m, { hecho, total });
+        pintar();
+      }).then(r => {
+        if (!r.ok) fallo = r.error ?? 'error';
+      });
     const inicio = Date.now();
     const espera = (ms: number) => new Promise<void>(listo => window.setTimeout(listo, ms));
     for (;;) {
@@ -826,7 +862,8 @@ export class VistaDiario extends ItemView {
         return;
       }
       const min = Math.floor((Date.now() - inicio) / 60_000);
-      if (min >= 1) estado.setText(`${t.estadoDescargando} (${min} min)`);
+      // sin eventos de progreso (stream caído): al menos los minutos
+      if (min >= 1 && !progreso.size) textoEstado.setText(`${t.estadoDescargando} (${min} min)`);
     }
   }
 
