@@ -171,6 +171,12 @@ function listarNotas(vault: string): string[] {
   return rutas;
 }
 
+// Exportada solo para que los tests no esperen 4 segundos reales.
+export let ESPERA_REINTENTO_MS = 4000;
+export function fijarEsperaReintento(ms: number): void {
+  ESPERA_REINTENTO_MS = ms;
+}
+
 export class Rag {
   private indice: IndiceRag;
   private embed: FnEmbed;
@@ -184,6 +190,19 @@ export class Rag {
   ) {
     this.embed = embed ?? embedOllama(cfg);
     this.indice = cargarIndiceRag(vault, cfg.modeloEmbed ?? '');
+  }
+
+  // Ollama recargando modelos para hacer sitio en la VRAM (o reiniciándose)
+  // produce fallos TRANSITORIOS de embeddings; un reintento con espera los
+  // absorbe — apagar la memoria entera por uno solo era demasiado (medido:
+  // "memory off" intermitente conviviendo con bonsai-27b).
+  private async embedRobusto(textos: string[]): Promise<number[][]> {
+    try {
+      return await this.embed(textos);
+    } catch {
+      await new Promise(listo => setTimeout(listo, ESPERA_REINTENTO_MS));
+      return this.embed(textos);
+    }
   }
 
   // Re-embebe solo las notas nuevas o cambiadas. Nunca lanza: si el modelo
@@ -206,7 +225,7 @@ export class Rag {
           this.indice.notas[ruta] = { hash, chunks: [] };
           continue;
         }
-        const vectores = await this.embed(trozos.map(t => prefijoDoc(nombre, t.texto)));
+        const vectores = await this.embedRobusto(trozos.map(t => prefijoDoc(nombre, t.texto)));
         this.indice.notas[ruta] = {
           hash,
           chunks: trozos.map((t, i) => ({ seccion: t.seccion, texto: t.texto, vector: vectores[i] ?? [] })),
@@ -222,6 +241,13 @@ export class Rag {
     } catch (e) {
       this.activo = false;
       this.ultimoError = e instanceof Error ? e.message : String(e);
+      // lo ya embebido se guarda: la próxima pasada retoma donde quedó
+      try {
+        mkdirSync(join(this.vault, '.indice'), { recursive: true });
+        writeFileSync(rutaIndiceRag(this.vault), JSON.stringify(this.indice), 'utf8');
+      } catch {
+        // sin escritura posible: se re-embeberá entero la próxima vez
+      }
     }
     return { embebidas, total: vivas.size };
   }
@@ -232,7 +258,7 @@ export class Rag {
     // puntúa ~0.3-0.6 con chunks por párrafo; el ruido queda por debajo de ~0.2
     const { k = 3, min = 0.28, excluir } = opciones ?? {};
     try {
-      const [vector] = await this.embed([prefijoConsulta(consulta)]);
+      const [vector] = await this.embedRobusto([prefijoConsulta(consulta)]);
       const resultados: ResultadoRag[] = [];
       for (const [ruta, nota] of Object.entries(this.indice.notas)) {
         if (excluir?.test(ruta)) continue;

@@ -6,7 +6,7 @@
 // libres con detección de pausa) y adjuntos (fotos multimodales, PDF/txt).
 
 import { Buffer } from 'node:buffer';
-import { ItemView, type WorkspaceLeaf } from 'obsidian';
+import { ItemView, setIcon, type WorkspaceLeaf } from 'obsidian';
 import { TEXTOS_UI, type TextosUi } from '../../diario/src/idioma.js';
 import { energiasRecientes, racha } from '../../diario/src/racha.js';
 import { ConsultaDiario } from '../../diario/src/consulta.js';
@@ -72,6 +72,9 @@ export class VistaDiario extends ItemView {
   private colaAudio: Promise<void> = Promise.resolve();
   private audiosEnCola = 0;
   private audioActual: HTMLAudioElement | null = null;
+  // subir la generación invalida todo lo encolado: es el "silencio" del parlante
+  private generacionAudio = 0;
+  private burbujaSonando: HTMLElement | null = null;
   private bloqueados: Blob[] = [];
   private grabando = false;
   private grabadorManual: MediaRecorder | null = null;
@@ -239,8 +242,52 @@ export class VistaDiario extends ItemView {
     contenedor: HTMLElement = this.chatEl
   ): HTMLElement {
     const div = contenedor.createDiv({ cls: `diario-burbuja diario-${clase}`, text: texto });
+    if (clase === 'asistente') this.botonVozBurbuja(div, texto);
     this.bajarScroll(contenedor);
     return div;
+  }
+
+  // Parlante por burbuja: vuelve a leer la respuesta, o silencia la que suena.
+  // Se oculta por CSS cuando el sidecar de voz no está (clase en la raíz).
+  private botonVozBurbuja(div: HTMLElement, texto: string): void {
+    const btn = div.createEl('button', { cls: 'diario-burbuja-voz', attr: { 'aria-label': this.t().leerRespuesta } });
+    setIcon(btn, 'volume-2');
+    this.registerDomEvent(btn, 'click', () => {
+      if (this.burbujaSonando === div) {
+        this.detenerVoz();
+        return;
+      }
+      if (!this.saludVoz.kokoro) return;
+      const oraciones = dividirOraciones(texto);
+      if (!oraciones.length) return;
+      this.detenerVoz();
+      this.marcarSonando(div);
+      const gen = this.generacionAudio;
+      this.encolar(async () => {
+        await this.reproducirSecuencia(oraciones, gen);
+        if (this.burbujaSonando === div && gen === this.generacionAudio) this.marcarSonando(null);
+      });
+    });
+  }
+
+  private marcarSonando(div: HTMLElement | null): void {
+    const pintar = (b: HTMLElement | null, sonando: boolean) => {
+      const btn = b?.querySelector<HTMLElement>('.diario-burbuja-voz');
+      if (!btn) return;
+      setIcon(btn, sonando ? 'square' : 'volume-2');
+      btn.setAttribute('aria-label', sonando ? this.t().pararVoz : this.t().leerRespuesta);
+      btn.toggleClass('diario-sonando', sonando);
+    };
+    pintar(this.burbujaSonando, false);
+    this.burbujaSonando = div;
+    pintar(div, true);
+  }
+
+  private detenerVoz(): void {
+    this.generacionAudio++; // mata la cola pendiente (cada tarea lleva su generación)
+    this.audioActual?.pause();
+    this.audioActual = null;
+    this.marcarSonando(null);
   }
 
   private mostrarIndicador(texto: string, contenedor: HTMLElement = this.chatEl): void {
@@ -276,6 +323,7 @@ export class VistaDiario extends ItemView {
     const t = this.t();
     const salud = await this.plugin.voz().salud();
     this.saludVoz = salud;
+    this.contentEl.toggleClass('diario-voz-tts', !!salud.kokoro);
     this.poblarVoces(salud.voces_kokoro, salud.voz_defecto);
     if (this.motor === null && salud.kokoro) {
       this.motor = 'kokoro';
@@ -323,7 +371,8 @@ export class VistaDiario extends ItemView {
     if (this.motor !== 'kokoro' || !this.saludVoz.kokoro) return;
     const oraciones = dividirOraciones(texto);
     if (!oraciones.length) return;
-    this.encolar(() => this.reproducirSecuencia(oraciones));
+    const gen = this.generacionAudio;
+    this.encolar(() => this.reproducirSecuencia(oraciones, gen));
   }
 
   private encolar(tarea: () => Promise<void>): void {
@@ -344,10 +393,10 @@ export class VistaDiario extends ItemView {
       .then(datos => (datos ? new Blob([datos], { type: 'audio/wav' }) : null));
   }
 
-  private async reproducirSecuencia(oraciones: string[]): Promise<void> {
+  private async reproducirSecuencia(oraciones: string[], gen: number): Promise<void> {
     let siguiente = this.pedirTts(oraciones[0]);
     for (let i = 0; i < oraciones.length; i++) {
-      if (this.cerrada) return;
+      if (this.cerrada || gen !== this.generacionAudio) return;
       const blob = await siguiente;
       if (i + 1 < oraciones.length) siguiente = this.pedirTts(oraciones[i + 1]);
       if (blob) await this.reproducirBlob(blob);
@@ -371,6 +420,7 @@ export class VistaDiario extends ItemView {
     await new Promise<void>(fin => {
       audio.onended = () => fin();
       audio.onerror = () => fin();
+      audio.onpause = () => fin(); // detenerVoz() pausa: sin esto la cola quedaría colgada
     });
     URL.revokeObjectURL(url);
     this.audioActual = null;
@@ -614,6 +664,13 @@ export class VistaDiario extends ItemView {
     this.bajarScroll(consultar ? this.consultaChatEl : this.chatEl);
   }
 
+  // "Sin memoria" con la CAUSA cuando el índice sabe por qué se apagó —
+  // sin esto, diagnosticar fallos transitorios de embeddings era a ciegas
+  private msgSinMemoria(): string {
+    const detalle = this.plugin.rag?.ultimoError;
+    return detalle ? `${this.t().consultaSinMemoria} — ${detalle}` : this.t().consultaSinMemoria;
+  }
+
   private abrirConsulta(): void {
     if (this.plugin.rag?.activo) {
       this.burbuja('asistente', this.t().consultaIntro, this.consultaChatEl);
@@ -621,7 +678,7 @@ export class VistaDiario extends ItemView {
     }
     // sin memoria todavía: puede estar bajándose el modelo, o el índice se
     // anuló al guardar ajustes — reintenta en segundo plano y avisa al llegar
-    this.burbuja('sistema', this.t().consultaSinMemoria, this.consultaChatEl);
+    this.burbuja('sistema', this.msgSinMemoria(), this.consultaChatEl);
     void this.plugin.refrescarRag().then(() => {
       if (!this.cerrada && this.plugin.rag?.activo)
         this.burbuja('asistente', this.t().consultaIntro, this.consultaChatEl);
@@ -647,7 +704,7 @@ export class VistaDiario extends ItemView {
       const rag = this.plugin.rag;
       if (!rag?.activo) {
         this.quitarIndicador();
-        this.burbuja('sistema', t.consultaSinMemoria, this.consultaChatEl);
+        this.burbuja('sistema', this.msgSinMemoria(), this.consultaChatEl);
         return;
       }
       // el Rag pudo recrearse (otra instancia): la consulta memoizada

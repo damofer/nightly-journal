@@ -165,6 +165,8 @@ export interface TextosUi {
   motorOff: string;
   generos: { f: string; m: string };
   avisoAudio: string;
+  leerRespuesta: string;
+  pararVoz: string;
   rachaTitulo: string; // plantilla con {n}
   preparando: string;
   pensando: string;
@@ -229,6 +231,8 @@ export const TEXTOS_UI: Record<Idioma, TextosUi> = {
     motorOff: '🔇 voz: no',
     generos: { f: 'mujer', m: 'hombre' },
     avisoAudio: '🔊 toca para activar la voz',
+    leerRespuesta: 'Escuchar esta respuesta',
+    pararVoz: 'Silenciar',
     rachaTitulo: 'llevas {n} noche(s) seguida(s) escribiendo — las barras son tu energía de la semana',
     preparando: 'preparando la entrevista…',
     pensando: 'pensando…',
@@ -291,6 +295,8 @@ export const TEXTOS_UI: Record<Idioma, TextosUi> = {
     motorOff: '🔇 voice: off',
     generos: { f: 'woman', m: 'man' },
     avisoAudio: '🔊 tap to enable audio',
+    leerRespuesta: 'Listen to this reply',
+    pararVoz: 'Stop reading',
     rachaTitulo: '{n} night(s) in a row — the bars show your energy this week',
     preparando: 'getting the interview ready…',
     pensando: 'thinking…',

@@ -78,6 +78,44 @@
   border: 1px solid var(--background-modifier-border);
   border-bottom-left-radius: 4px;
   align-self: flex-start;
+  position: relative;
+}
+
+/* parlante por burbuja: solo visible cuando el sidecar de voz responde */
+.diario-burbuja-voz {
+  display: none;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 2px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  cursor: pointer;
+  color: var(--text-faint);
+  line-height: 0;
+}
+
+.diario-voz-tts .diario-burbuja-voz {
+  display: inline-flex;
+}
+
+.diario-voz-tts .diario-asistente {
+  padding-right: 34px;
+}
+
+.diario-burbuja-voz:hover {
+  color: var(--text-normal);
+  background: transparent;
+}
+
+.diario-burbuja-voz.diario-sonando {
+  color: var(--interactive-accent);
+}
+
+.diario-burbuja-voz svg {
+  width: 16px;
+  height: 16px;
 }
 
 .diario-usuario {
