@@ -14,6 +14,8 @@
 
 [English](#english) · [Español](#español)
 
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Buy%20me%20a%20coffee-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/damofer)
+
 ---
 
 ## English
@@ -211,6 +213,16 @@ npm install --prefix apps/diario
 npm install --prefix apps/obsidian
 npm run build --prefix apps/obsidian    # typecheck + bundle → apps/obsidian/main.js
 ```
+
+---
+
+## Support · Apoya el proyecto
+
+Nightly Journal is free and open source, and it will stay that way. If it earns a place in your night routine, you can buy me a coffee — it keeps the project moving.
+
+Nightly Journal es gratis y de código abierto, y lo seguirá siendo. Si se gana un lugar en tu rutina nocturna, puedes invitarme un café — es lo que mantiene el proyecto en marcha.
+
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Buy%20me%20a%20coffee-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/damofer)
 
 ---
 
