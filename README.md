@@ -12,7 +12,7 @@
 
 **[▶ Watch the 4-minute demo on YouTube · Mira la demo de 4 minutos](https://youtu.be/YU2AYiabJq4)**
 
-[English](#english) · [Español](#español)
+[English](#english) · [Español](#español) · [☕ Ko-fi](https://ko-fi.com/damofer)
 
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Buy%20me%20a%20coffee-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/damofer)
 
@@ -223,6 +223,8 @@ Nightly Journal is free and open source, and it will stay that way. If it earns 
 Nightly Journal es gratis y de código abierto, y lo seguirá siendo. Si se gana un lugar en tu rutina nocturna, puedes invitarme un café — es lo que mantiene el proyecto en marcha.
 
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Buy%20me%20a%20coffee-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/damofer)
+
+**[☕ Buy me a coffee on Ko-fi · Invítame un café en Ko-fi](https://ko-fi.com/damofer)**
 
 ---
 
