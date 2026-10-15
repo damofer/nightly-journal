@@ -216,6 +216,14 @@ npm run build --prefix apps/obsidian    # typecheck + bundle → apps/obsidian/m
 
 ---
 
+## Feedback · Comentarios
+
+Found a bug or have an idea? [Open an issue](https://github.com/damofer/nightly-journal/issues/new). Even quicker: **Settings → Nightly Journal → Report a problem** opens one with the technical details already filled in.
+
+¿Encontraste un fallo o tienes una idea? [Abre un issue](https://github.com/damofer/nightly-journal/issues/new). Más rápido aún: **Ajustes → Nightly Journal → Reportar un problema** lo abre con los datos técnicos ya rellenos.
+
+---
+
 ## Support · Apoya el proyecto
 
 Nightly Journal is free and open source, and it will stay that way. If it earns a place in your night routine, you can buy me a coffee — it keeps the project moving.

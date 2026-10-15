@@ -1,7 +1,8 @@
 // Ajustes del plugin: mapean el Config del núcleo. Se persisten con
 // loadData/saveData de Obsidian (data.json del plugin, no config.json).
 
-import { getLanguage, PluginSettingTab, Setting, type App } from 'obsidian';
+import { arch, homedir, release } from 'node:os';
+import { apiVersion, getLanguage, PluginSettingTab, requestUrl, Setting, type App } from 'obsidian';
 import type { Idioma } from '../../diario/src/idioma.js';
 import { AsistenteVoz } from './instalador_voz.js';
 import type DiarioPlugin from './main.js';
@@ -113,6 +114,20 @@ const ETIQUETAS = {
     vozPython: 'Python del sidecar',
     vozScript: 'Script del sidecar (servidor_voz.py)',
     vozCwd: 'Carpeta de trabajo del sidecar',
+    ayuda: 'Ayuda y comentarios',
+    ayudaDesc: 'Me llega directo, y es lo que decide qué se arregla y qué se construye después.',
+    reportar: 'Reportar un problema',
+    reportarDesc: 'Abre un issue en GitHub con los datos técnicos ya rellenos (versiones y modelos, nada de tus notas). Lo revisas antes de enviarlo.',
+    reportarBoton: 'reportar',
+    sugerir: 'Sugerir una idea',
+    sugerirDesc: '¿Qué le falta al diario? ¿Qué cambiarías? Abre un issue en GitHub.',
+    sugerirBoton: 'sugerir',
+    issueQuePaso: 'Qué pasó',
+    issueEsperado: 'Qué esperabas que pasara',
+    issuePasos: 'Pasos para reproducirlo',
+    issueIdea: 'La idea',
+    issuePorque: 'Por qué la necesitas (qué intentabas hacer)',
+    issueDatos: 'Datos técnicos',
   },
   en: {
     ollamaUrl: 'Ollama URL',
@@ -145,8 +160,24 @@ const ETIQUETAS = {
     vozPython: 'Sidecar python',
     vozScript: 'Sidecar script (servidor_voz.py)',
     vozCwd: 'Sidecar working directory',
+    ayuda: 'Help and feedback',
+    ayudaDesc: 'It reaches me directly, and it decides what gets fixed and built next.',
+    reportar: 'Report a problem',
+    reportarDesc: 'Opens a GitHub issue with the technical details already filled in (versions and models, none of your notes). You review it before sending.',
+    reportarBoton: 'report',
+    sugerir: 'Suggest an idea',
+    sugerirDesc: 'What is the journal missing? What would you change? Opens a GitHub issue.',
+    sugerirBoton: 'suggest',
+    issueQuePaso: 'What happened',
+    issueEsperado: 'What you expected to happen',
+    issuePasos: 'Steps to reproduce',
+    issueIdea: 'The idea',
+    issuePorque: 'Why you need it (what you were trying to do)',
+    issueDatos: 'Technical details',
   },
 } as const;
+
+const URL_ISSUES = 'https://github.com/damofer/nightly-journal/issues/new';
 
 export class PestanaAjustes extends PluginSettingTab {
   constructor(
@@ -312,5 +343,68 @@ export class PestanaAjustes extends PluginSettingTab {
         await this.plugin.guardarAjustes();
       })
     );
+
+    new Setting(containerEl).setName(t.ayuda).setDesc(t.ayudaDesc).setHeading();
+
+    new Setting(containerEl)
+      .setName(t.reportar)
+      .setDesc(t.reportarDesc)
+      .addButton(b => b.setButtonText(t.reportarBoton).onClick(() => void this.abrirIssue('problema')));
+
+    new Setting(containerEl)
+      .setName(t.sugerir)
+      .setDesc(t.sugerirDesc)
+      .addButton(b => b.setButtonText(t.sugerirBoton).onClick(() => void this.abrirIssue('idea')));
+  }
+
+  // Abre un issue de GitHub pre-rellenado. Sin servidor propio: el usuario
+  // lo revisa en el navegador y decide si lo envía. Los datos técnicos son
+  // lo que faltó en el caso de la memoria con bonsai (versión de Ollama,
+  // modelos, el error real) — sin ellos, cada reporte era un interrogatorio.
+  private async abrirIssue(tipo: 'problema' | 'idea'): Promise<void> {
+    const t = ETIQUETAS[this.plugin.idioma()];
+    const cuerpo =
+      tipo === 'problema'
+        ? `### ${t.issueQuePaso}\n\n\n### ${t.issueEsperado}\n\n\n### ${t.issuePasos}\n1. \n\n`
+        : `### ${t.issueIdea}\n\n\n### ${t.issuePorque}\n\n\n`;
+    const datos = await this.datosTecnicos();
+    const texto = `${cuerpo}<details><summary>${t.issueDatos}</summary>\n\n\`\`\`\n${datos}\n\`\`\`\n</details>\n`;
+    const prefijo = tipo === 'problema' ? '[bug] ' : '[idea] ';
+    const url = `${URL_ISSUES}?title=${encodeURIComponent(prefijo)}&body=${encodeURIComponent(texto)}`;
+    window.open(url);
+  }
+
+  private async datosTecnicos(): Promise<string> {
+    const a = this.plugin.ajustes;
+    let ollama = 'not reachable';
+    try {
+      const res = await requestUrl({ url: `${a.ollamaUrl}/api/version`, throw: false });
+      if (res.status === 200) ollama = (res.json as { version?: string }).version ?? 'unknown';
+    } catch {
+      // Ollama apagado: justo el dato que hace falta en el reporte
+    }
+    const salud = await this.plugin.voz().salud();
+    const voz = !a.vozActivada
+      ? 'off'
+      : salud.apagado
+        ? 'on, sidecar not responding'
+        : `on, stt ${salud.stt ? 'ok' : 'down'}, tts ${salud.kokoro ? 'ok' : 'down'}`;
+    const rag = this.plugin.rag;
+    // el error puede traer rutas absolutas: la carpeta del usuario no viaja
+    const memoria = !rag
+      ? 'not loaded'
+      : `${rag.activo ? 'active' : 'off'}, ${rag.notasIndexadas()} notes${rag.ultimoError ? `, last error: ${rag.ultimoError.split(homedir()).join('~')}` : ''}`;
+    return [
+      `Nightly Journal ${this.plugin.manifest.version}`,
+      `Obsidian ${apiVersion}`,
+      `OS: ${process.platform} ${release()} (${arch()})`,
+      `Ollama: ${ollama}`,
+      `Interview model: ${a.modelo}`,
+      `Extraction model: ${a.modeloExtractor}`,
+      `Embeddings model: ${a.modeloEmbed}`,
+      `Language: ${this.plugin.idioma()}`,
+      `Voice: ${voz}`,
+      `Memory: ${memoria}`,
+    ].join('\n');
   }
 }
